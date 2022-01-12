@@ -6,9 +6,15 @@ This link is useful for learning [Forth syntax].(https://skilldrick.github.io/ea
 
 This interpreter is written in C.
 
-Words must be space-delimited.
+### Booleans
 
-`0` is considered `false` and `1` (or any other integer) is considered `true`.
+`0` is considered `false`.
+
+`1` (or any non-zero integer) is considered `true`. However, `1` is preferred.
+
+### Words
+
+Words must be space-delimited.
 
 Currently supported words:
 
@@ -36,14 +42,18 @@ To be implemented:
 | Word | Description |
 | --- | --- |
 |  |  |
-| Defining Words | Defining user-declared words |
 
 Some tests are available in `tests` folder, each `.fth` file is matched with a `.o` file which is the code and the expected result respectively. These tests are run automatically by `test.py`, which must be executed in the root directory.
 
 To do:
-- Write more tests
 - Parse all tokens into an deque (doubly-linked list) to process
+- Remainder operation
+- Inequality GTE, LTE, GT, LT operations
+- `if` statements
+- `while` and `for` (`do` loop) loop
+- String printing `." --multiple ASCII Integers-- end`
 - Add support for commments
+- Allow user-defined words
 
 ### Example Program
 Code:

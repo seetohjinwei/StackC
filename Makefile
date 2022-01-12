@@ -1,13 +1,13 @@
 .PHONY: run_script
 
-all: forth.out run_script
+all: forth run_script
 
 run_script:
 	python3 test.py
 
-forth.out: forth.c
-	gcc -Wall forth.c -o forth.out
+forth: forth.c
+	gcc -Wall forth.c -o forth
 
 clean:
-	rm forth.out
+	rm forth
 

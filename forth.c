@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* Python-like assertions. */
 int assert(int truth, char *message) {
   if (truth == 0) {
     printf("ERROR: %s\n", message);
@@ -32,16 +33,18 @@ enum OPS {
   OPS_COUNT // size of enum OPS
 };
 
-struct Deque {
+/* Doubly Linked List implementation of a queue. */
+
+struct Queue {
   int size;
-  struct DequeElem* first;
-  struct DequeElem* last;
+  struct QueueElem* head;
+  struct QueueElem* tail;
 };
 
-struct DequeElem {
+struct QueueElem {
   struct Token* token;
-  struct DequeElem* prev;
-  struct DequeElem* next;
+  struct QueueElem* prev;
+  struct QueueElem* next;
 };
 
 /* Linked List implementation of a stack. */
@@ -62,36 +65,55 @@ struct Token {
   int value;
 };
 
-/* Initialise a new deque. */
-struct Deque* newDeque(void) {
-  struct Deque *deque;
-  deque = (struct Deque*) malloc(sizeof(struct Deque));
-  deque->size = 0;
-  deque->first = NULL;
-  deque->last = NULL;
-  return deque;
+/* Initialise a new queue. */
+struct Queue* newQueue(void) {
+  struct Queue *queue;
+  queue = (struct Queue*) malloc(sizeof(struct Queue));
+  queue->size = 0;
+  queue->head = NULL;
+  queue->tail = NULL;
+  return queue;
 }
 
-/* Add to back of deque. */
-void addLast(struct Deque* deque, struct Token* token) {
-  deque->size++;
-  struct DequeElem *elem;
-  elem = (struct DequeElem*) malloc(sizeof(struct DequeElem));
+int isEmptyQueue(struct Queue* queue) {
+  return queue->size == 0;
+}
+
+/* Push to queue. */
+void pushQueue(struct Queue* queue, struct Token* token) {
+  struct QueueElem *elem;
+  elem = (struct QueueElem*) malloc(sizeof(struct QueueElem));
   elem->token = token;
   elem->next = NULL;
-  if (deque->size == 0) {
-    deque->first = elem;
-    deque->last = elem;
+  if (queue->size == 0) {
+    queue->head = elem;
+    queue->tail = elem;
     elem->prev = NULL;
   } else {
-    struct DequeElem *prevLast = deque->last;
+    struct QueueElem *prevLast = queue->head;
     prevLast->next = elem;
     elem->prev = prevLast;
-    deque->last = elem;
+    queue->tail = elem;
   }
+  queue->size++;
 }
 
-/* TODO: addFirst, popLast, popFirst, peekLast, peekFirst */
+/* Poll head of queue. */
+struct Token* pollQueue(struct Queue* queue) {
+  assert(!isEmptyQueue(queue), "Polling from empty queue.");
+  struct QueueElem *prevHead = queue->head;
+  struct QueueElem *newHead = prevHead->next;
+  queue->head = newHead;
+  newHead->prev = NULL;
+  queue->size--;
+  return prevHead->token;
+}
+
+/* Peek head of queue. */
+struct Token* peekQueue(struct Queue* queue) {
+  assert(!isEmptyQueue(queue), "Peeking empty queue.");
+  return queue->head->token;
+}
 
 /* Initialise a new stack. */
 struct Stack* newStack(void) {
@@ -103,12 +125,12 @@ struct Stack* newStack(void) {
 }
 
 /* Checking if a stack is empty. */
-int isEmpty(struct Stack* stack) {
+int isEmptyStack(struct Stack* stack) {
   return stack->size == 0;
 }
 
 /* Push an integer onto a stack. */
-int push(struct Stack* stack, int value) {
+int pushStack(struct Stack* stack, int value) {
   struct Node* newNode;
   newNode = (struct Node*) malloc(sizeof(struct Node));
   newNode->value = value;
@@ -119,18 +141,14 @@ int push(struct Stack* stack, int value) {
 }
 
 /* Peek at the first element of the stack. */
-int peek(struct Stack* stack) {
-  if (isEmpty(stack)) {
-    assert(0, "Stack underflow.\n");
-  }
+int peekStack(struct Stack* stack) {
+  assert(!isEmptyStack(stack), "Stack underflow.\n");
   return stack->root->value;
 }
 
 /* Pops the first element of the stack. */
-int pop(struct Stack* stack) {
-  if (isEmpty(stack)) {
-    assert(0, "Stack underflow.\n");
-  }
+int popStack(struct Stack* stack) {
+  assert(!isEmptyStack(stack), "Stack underflow.\n");
   struct Node* poppedNode = stack->root;
   stack->root = poppedNode->next;
   stack->size--;
@@ -156,61 +174,61 @@ int isNumber(char* word) {
 void parse(struct Stack* stack, struct Token* token) {
   assert(OPS_COUNT == 17, "Update control flow in parse().");
   if (token->OP_TYPE == OP_INT) {
-    push(stack, token->value);
+    pushStack(stack, token->value);
   } else if (token->OP_TYPE == OP_ADD) {
-    int a = pop(stack);
-    int b = pop(stack);
-    push(stack, b + a);
+    int a = popStack(stack);
+    int b = popStack(stack);
+    pushStack(stack, b + a);
   } else if (token->OP_TYPE == OP_SUB) {
-    int a = pop(stack);
-    int b = pop(stack);
-    push(stack, b - a);
+    int a = popStack(stack);
+    int b = popStack(stack);
+    pushStack(stack, b - a);
   } else if (token->OP_TYPE == OP_MUL) {
-    int a = pop(stack);
-    int b = pop(stack);
-    push(stack, b * a);
+    int a = popStack(stack);
+    int b = popStack(stack);
+    pushStack(stack, b * a);
   } else if (token->OP_TYPE == OP_DIV) {
-    int a = pop(stack);
-    int b = pop(stack);
-    push(stack, b / a);
+    int a = popStack(stack);
+    int b = popStack(stack);
+    pushStack(stack, b / a);
   } else if (token->OP_TYPE == OP_EQU) {
-    int a = pop(stack);
-    int b = pop(stack);
-    push(stack, a != b ? 0 : 1);
+    int a = popStack(stack);
+    int b = popStack(stack);
+    pushStack(stack, a != b ? 0 : 1);
   } else if (token->OP_TYPE == OP_PEEK) {
-    int top = peek(stack);
+    int top = peekStack(stack);
     printf("%d\n", top);
   } else if (token->OP_TYPE == OP_POP) {
-    int top = pop(stack);
+    int top = popStack(stack);
     printf("%d\n", top);
   } else if (token->OP_TYPE == OP_EMIT) {
-    int top = pop(stack);
+    int top = popStack(stack);
     printf("%c\n", top);
   } else if (token->OP_TYPE == OP_SIZE) {
     int size = stack->size;
     printf("%d\n", size);
   } else if (token->OP_TYPE == OP_DUP) {
-    int top = peek(stack);
-    push(stack, top);
+    int top = peekStack(stack);
+    pushStack(stack, top);
   } else if (token->OP_TYPE == OP_DROP) {
-    pop(stack);
+    popStack(stack);
   } else if (token->OP_TYPE == OP_SWAP) {
-    int a = pop(stack);
-    int b = pop(stack);
-    push(stack, a);
-    push(stack, b);
+    int a = popStack(stack);
+    int b = popStack(stack);
+    pushStack(stack, a);
+    pushStack(stack, b);
   } else if (token->OP_TYPE == OP_OVER) {
-    int a = pop(stack);
-    int second = peek(stack);
-    push(stack, a);
-    push(stack, second);
+    int a = popStack(stack);
+    int second = peekStack(stack);
+    pushStack(stack, a);
+    pushStack(stack, second);
   } else if (token->OP_TYPE == OP_ROT) {
-    int c = pop(stack);
-    int b = pop(stack);
-    int a = pop(stack);
-    push(stack, b);
-    push(stack, c);
-    push(stack, a);
+    int c = popStack(stack);
+    int b = popStack(stack);
+    int a = popStack(stack);
+    pushStack(stack, b);
+    pushStack(stack, c);
+    pushStack(stack, a);
   } else if (token->OP_TYPE == OP_CR) {
     printf("\n");
   } else {
@@ -260,37 +278,38 @@ struct Token* makeToken(int pos, char *word) {
     token->OP_TYPE = OP_CR;
   } else {
     token->OP_TYPE = OP_UNKNOWN;
-    printf("ERROR: Word %s not implemented yet.\n", word);
-    exit(1);
+    char *message;
+    asprintf(&message, "Word %s not implemented yet.", word);
+    assert(0, message);
   }
   return token;
 }
 
 /* Main Function */
 int main(int argc, char* argv[]) {
-  if (argc < 2) {
-    printf("ERROR: No file given.\n");
-    printf("    Please use `./forth.out filename`\n");
-    exit(1);
-  }
+  /* assert(argc > 1, "No file given.\nPlease use `./forth filename`"); */
   char* filename = argv[1];
   FILE *sourceptr;
   sourceptr = fopen(filename, "r");
 
   if (sourceptr == NULL) {
-    printf("ERROR: File %s not found\n", filename);
-    exit(1);
+    char *message;
+    asprintf(&message, "File %s not found", filename);
+    assert(sourceptr == NULL, message);
   }
 
+  struct Queue* instructions = newQueue();
   struct Stack* stack = newStack();
-  // word size is limited to 256
+  /* word size is limited to 256 */
   char word[256];
   int pos = 0;
   while(fscanf(sourceptr, "%s", word) != EOF) {
     struct Token *token = makeToken(pos, word);
-    parse(stack, token);
+    /* parse(stack, token); */
+    pushQueue(instructions, token);
     pos = ftell(sourceptr);
   }
+  /* TODO: Parse the queue instead of directly. */
   fclose(sourceptr);
   return 0;
 }

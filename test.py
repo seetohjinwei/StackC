@@ -1,6 +1,7 @@
 import subprocess
 import os
 
+
 def get_files(dir) -> list[str]:
     result = []
 
@@ -14,8 +15,9 @@ def get_files(dir) -> list[str]:
 
     return result
 
+
 def run_test(dir, test) -> bool:
-    output: subprocess.CompletedProcess = subprocess.run(["./forth.out", f"{dir}{test}.fth"], capture_output=True)
+    output: subprocess.CompletedProcess = subprocess.run(["./forth", f"{dir}{test}.fth"], capture_output=True)
     stdout = output.stdout
     if not os.path.isfile(f"{dir}{test}.o"):
         print(f"Output file for `{test}` not found")
@@ -38,6 +40,7 @@ def main() -> None:
             print(f"Test `{test}` failed.")
 
     print(f"Tests: {passed}/{total}")
+
 
 if __name__ == "__main__":
     main()
