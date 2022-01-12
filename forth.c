@@ -26,7 +26,21 @@ enum OPS {
   OP_DROP,
   OP_SWAP,
   OP_OVER,
+  OP_ROT,
+  OP_CR,
   OPS_COUNT // size of enum OPS
+};
+
+struct Deque {
+  int size;
+  struct DequeElem* first;
+  struct DequeElem* last;
+};
+
+struct DequeElem {
+  struct Token* token;
+  struct DequeElem* prev;
+  struct DequeElem* next;
 };
 
 /* Linked List implementation of a stack. */
@@ -46,6 +60,37 @@ struct Token {
   enum OPS OP_TYPE;
   int value;
 };
+
+/* Initialise a new deque. */
+struct Deque* newDeque(void) {
+  struct Deque *deque;
+  deque = (struct Deque*) malloc(sizeof(struct Deque));
+  deque->size = 0;
+  deque->first = NULL;
+  deque->last = NULL;
+  return deque;
+}
+
+/* Add to back of deque. */
+void addLast(struct Deque* deque, struct Token* token) {
+  deque->size++;
+  struct DequeElem *elem;
+  elem = (struct DequeElem*) malloc(sizeof(struct DequeElem));
+  elem->token = token;
+  elem->next = NULL;
+  if (deque->size == 0) {
+    deque->first = elem;
+    deque->last = elem;
+    elem->prev = NULL;
+  } else {
+    struct DequeElem *prevLast = deque->last;
+    prevLast->next = elem;
+    elem->prev = prevLast;
+    deque->last = elem;
+  }
+}
+
+/* TODO: addFirst, popLast, popFirst, peekLast, peekFirst */
 
 /* Initialise a new stack. */
 struct Stack* newStack(void) {
@@ -108,7 +153,7 @@ int isNumber(char* word) {
 
 /* Parses a token. */
 void parse(struct Stack* stack, struct Token* token) {
-  assert(OPS_COUNT == 14, "Update control flow in parse().");
+  assert(OPS_COUNT == 16, "Update control flow in parse().");
   if (token->OP_TYPE == OP_INT) {
     push(stack, token->value);
   } else if (token->OP_TYPE == OP_ADD) {
@@ -129,16 +174,16 @@ void parse(struct Stack* stack, struct Token* token) {
     push(stack, b / a);
   } else if (token->OP_TYPE == OP_PEEK) {
     int top = peek(stack);
-    printf("%d ", top);
+    printf("%d\n", top);
   } else if (token->OP_TYPE == OP_POP) {
     int top = pop(stack);
-    printf("%d ", top);
+    printf("%d\n", top);
   } else if (token->OP_TYPE == OP_EMIT) {
     int top = pop(stack);
-    printf("%c", top);
+    printf("%c\n", top);
   } else if (token->OP_TYPE == OP_SIZE) {
     int size = stack->size;
-    printf("%d ", size);
+    printf("%d\n", size);
   } else if (token->OP_TYPE == OP_DUP) {
     int top = peek(stack);
     push(stack, top);
@@ -154,6 +199,15 @@ void parse(struct Stack* stack, struct Token* token) {
     int second = peek(stack);
     push(stack, a);
     push(stack, second);
+  } else if (token->OP_TYPE == OP_ROT) {
+    int c = pop(stack);
+    int b = pop(stack);
+    int a = pop(stack);
+    push(stack, b);
+    push(stack, c);
+    push(stack, a);
+  } else if (token->OP_TYPE == OP_CR) {
+    printf("\n");
   } else {
     assert(0, "Unreachable code.");
   }
@@ -164,7 +218,7 @@ struct Token* makeToken(int pos, char *word) {
   token = (struct Token*) malloc(sizeof(struct Token));
   token->pos = pos;
   token->value = 0;
-  assert(OPS_COUNT == 14, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 16, "Update control flow in makeToken().");
   // control flow to decide type of operation
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;
@@ -193,6 +247,10 @@ struct Token* makeToken(int pos, char *word) {
     token->OP_TYPE = OP_SWAP;
   } else if (strcmp(word, "over") == 0) {
     token->OP_TYPE = OP_OVER;
+  } else if (strcmp(word, "rot") == 0) {
+    token->OP_TYPE = OP_ROT;
+  } else if (strcmp(word, "cr") == 0) {
+    token->OP_TYPE = OP_CR;
   } else {
     token->OP_TYPE = OP_UNKNOWN;
     printf("ERROR: Word %s not implemented yet.\n", word);
