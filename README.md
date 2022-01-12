@@ -8,6 +8,8 @@ This interpreter is written in C.
 
 Words must be space-delimited.
 
+`0` is considered `false` and `1` (or any other integer) is considered `true`.
+
 Currently supported words:
 
 | Word | Description |
@@ -21,6 +23,7 @@ Currently supported words:
 | `-` | Subtracts the first element from the second |
 | `*` | Multiplies the two first two elements |
 | `/` | Floor divides the first element from the second |
+| `=` | Pops the first two elements and pushes 0 or 1 depending on not equals or equals respectively |
 | `dup` | Duplicates the first element |
 | `drop` | Pops the first element |
 | `swap` | Swaps the first two elements |
@@ -40,6 +43,7 @@ Some tests are available in `tests` folder, each `.fth` file is matched with a `
 To do:
 - Write more tests
 - Parse all tokens into an deque (doubly-linked list) to process
+- Add support for commments
 
 ### Example Program
 Code:

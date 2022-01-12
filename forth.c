@@ -18,6 +18,7 @@ enum OPS {
   OP_SUB,
   OP_MUL,
   OP_DIV,
+  OP_EQU,
   OP_PEEK,
   OP_POP,
   OP_EMIT,
@@ -153,7 +154,7 @@ int isNumber(char* word) {
 
 /* Parses a token. */
 void parse(struct Stack* stack, struct Token* token) {
-  assert(OPS_COUNT == 16, "Update control flow in parse().");
+  assert(OPS_COUNT == 17, "Update control flow in parse().");
   if (token->OP_TYPE == OP_INT) {
     push(stack, token->value);
   } else if (token->OP_TYPE == OP_ADD) {
@@ -172,6 +173,10 @@ void parse(struct Stack* stack, struct Token* token) {
     int a = pop(stack);
     int b = pop(stack);
     push(stack, b / a);
+  } else if (token->OP_TYPE == OP_EQU) {
+    int a = pop(stack);
+    int b = pop(stack);
+    push(stack, a != b ? 0 : 1);
   } else if (token->OP_TYPE == OP_PEEK) {
     int top = peek(stack);
     printf("%d\n", top);
@@ -218,7 +223,7 @@ struct Token* makeToken(int pos, char *word) {
   token = (struct Token*) malloc(sizeof(struct Token));
   token->pos = pos;
   token->value = 0;
-  assert(OPS_COUNT == 16, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 17, "Update control flow in makeToken().");
   // control flow to decide type of operation
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;
@@ -231,6 +236,8 @@ struct Token* makeToken(int pos, char *word) {
     token->OP_TYPE = OP_MUL;
   } else if (strcmp(word, "/") == 0) {
     token->OP_TYPE = OP_DIV;
+  } else if (strcmp(word, "=") == 0) {
+    token->OP_TYPE = OP_EQU;
   } else if (strcmp(word, ",") == 0) {
     token->OP_TYPE = OP_PEEK;
   } else if (strcmp(word, ".") == 0) {
