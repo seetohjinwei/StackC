@@ -66,7 +66,8 @@ struct Stack {
 };
 
 struct Token {
-  int pos;
+  int row;
+  int col;
   enum OPS OP_TYPE;
   int value;
 };
@@ -74,7 +75,7 @@ struct Token {
 /* Print Token for debugging. */
 void printToken(struct Token* token) {
   printf("-- Token --\n");
-  printf("Position: %d\n", token->pos);
+  printf("Position: %d %d\n", token->row, token->col);
   printf("OP_TYPE: %d\n", token->OP_TYPE);
   printf("Value: %d\n", token->value);
 }
@@ -278,10 +279,11 @@ void parseQueueElem(struct Stack* stack, struct QueueElem* queueElem) {
   }
 }
 
-struct Token* makeToken(int pos, char *word) {
+struct Token* makeToken(int row, int col, char *word) {
   struct Token* token;
   token = (struct Token*) malloc(sizeof(struct Token));
-  token->pos = pos;
+  token->row = row;
+  token->col = col;
   token->value = 0;
   assert(OPS_COUNT == 22, "Update control flow in makeToken().");
   // control flow to decide type of operation
@@ -341,29 +343,58 @@ struct Token* makeToken(int pos, char *word) {
 int main(int argc, char* argv[]) {
   /* assert(argc > 1, "No file given.\nPlease use `./forth filename`"); */
   char* filename = argv[1];
-  FILE *sourceptr;
-  sourceptr = fopen(filename, "r");
+  FILE *source;
+  source = fopen(filename, "r");
 
-  if (sourceptr == NULL) {
+  if (source == NULL) {
     char *message;
     asprintf(&message, "File %s not found", filename);
-    assert(sourceptr == NULL, message);
+    assert(source == NULL, message);
   }
 
   struct Queue* instructions = newQueue();
   struct Stack* stack = newStack();
   /* word size is limited to 256 */
-  char word[256];
-  int pos = 0;
-  while(fscanf(sourceptr, "%s", word) != EOF) {
-    struct Token *token = makeToken(pos, word);
-    pushQueue(instructions, token);
-    pos = ftell(sourceptr);
+  int maxWordSize = 256;
+  char word[maxWordSize];
+  memset(word, 0, sizeof(word));
+
+  /* Parsing input line by line. */
+  char *line = NULL;
+  /* Signed integer, includes new line character. */
+  int row = 0;
+  ssize_t lengthOfLine;
+  size_t len = 0;
+  while((lengthOfLine = getline(&line, &len, source)) != -1) {
+    int wordIndex = 0;
+    memset(word, 0, sizeof(word));
+    int lineIndex;
+    for (lineIndex = 0; lineIndex < lengthOfLine; lineIndex++) {
+      char c = line[lineIndex];
+      /* Catch comments and ignore the rest (by exiting for loop). */
+      if (c == '-' && lineIndex < lengthOfLine - 1 && line[lineIndex+1] == '-') {
+        break;
+      } else if (c == ' ' || c == '\n') {
+        if (wordIndex == 0) {
+          /* Skipping multiple spaces. */
+          continue;
+        }
+        struct Token *token = makeToken(row, lineIndex - wordIndex, word);
+        pushQueue(instructions, token);
+        wordIndex = 0;
+        memset(word, 0, sizeof(word));
+      } else {
+        assert(wordIndex < maxWordSize, "Word is too long!");
+        word[wordIndex++] = c;
+      }
+    }
+    row++;
   }
+
   while(!isEmptyQueue(instructions)) {
     struct QueueElem* elem = pollQueue(instructions);
     parseQueueElem(stack, elem);
   }
-  fclose(sourceptr);
+  fclose(source);
   return 0;
 }

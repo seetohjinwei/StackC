@@ -6,15 +6,26 @@ This link is useful for learning [Forth syntax](https://skilldrick.github.io/eas
 
 This interpreter is written in C. Testing framework is written in Python.
 
+## Words
+
+Words must be separated with either a ` ` (space character) or `\n` (new line).
+
+## Comments
+
+Comments are declared by `--`, every character after `--` is ignored by the interpreter.
+
+```
+-- This is a comment.
+-- Anything after `--` is ignored.
+-- . . . . .
+-- Does not cause stack underflow because it is not ran!
+```
+
 ## Booleans
 
 `0` is considered `false`.
 
 `1` (or any non-zero integer) is considered `true`. However, `1` is preferred.
-
-## Words
-
-Words must be space-delimited.
 
 ### Integer
 
@@ -104,9 +115,9 @@ The following operations pop 2 elements off the stack and push 0 (if false) and 
 Some tests are available in `tests` folder, each `.fth` file is matched with a `.o` file which is the code and the expected result respectively. These tests are run automatically by `test.py`, which must be executed in the root directory.
 
 ## TODO
+- Power (exponent)
 - `if` statements
 - `while` and `for` (`do` loop) loop
 - String printing `." --multiple ASCII Integers-- end`
-- Add support for commments
 - Better testing framework (especially for verifying errors)
 - Allow user-defined words
