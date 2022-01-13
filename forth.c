@@ -34,6 +34,7 @@ enum OPS {
 };
 
 /* Doubly Linked List implementation of a queue. */
+/* Does not break links between elements when polling. */
 
 struct Queue {
   int size;
@@ -65,6 +66,14 @@ struct Token {
   int value;
 };
 
+/* Print Token for debugging. */
+void printToken(struct Token* token) {
+  printf("-- Token --\n");
+  printf("Position: %d\n", token->pos);
+  printf("OP_TYPE: %d\n", token->OP_TYPE);
+  printf("Value: %d\n", token->value);
+}
+
 /* Initialise a new queue. */
 struct Queue* newQueue(void) {
   struct Queue *queue;
@@ -85,12 +94,12 @@ void pushQueue(struct Queue* queue, struct Token* token) {
   elem = (struct QueueElem*) malloc(sizeof(struct QueueElem));
   elem->token = token;
   elem->next = NULL;
-  if (queue->size == 0) {
+  if (isEmptyQueue(queue)) {
     queue->head = elem;
     queue->tail = elem;
     elem->prev = NULL;
   } else {
-    struct QueueElem *prevLast = queue->head;
+    struct QueueElem *prevLast = queue->tail;
     prevLast->next = elem;
     elem->prev = prevLast;
     queue->tail = elem;
@@ -99,20 +108,27 @@ void pushQueue(struct Queue* queue, struct Token* token) {
 }
 
 /* Poll head of queue. */
-struct Token* pollQueue(struct Queue* queue) {
+struct QueueElem* pollQueue(struct Queue* queue) {
   assert(!isEmptyQueue(queue), "Polling from empty queue.");
   struct QueueElem *prevHead = queue->head;
   struct QueueElem *newHead = prevHead->next;
   queue->head = newHead;
-  newHead->prev = NULL;
+  /* newHead will maintain the reference to the now polled prev. */
   queue->size--;
-  return prevHead->token;
+  return prevHead;
 }
 
 /* Peek head of queue. */
 struct Token* peekQueue(struct Queue* queue) {
   assert(!isEmptyQueue(queue), "Peeking empty queue.");
   return queue->head->token;
+}
+
+/* Get previous token even when polled. */
+struct Token* prevQueueElem(struct QueueElem* currentElem) {
+  struct QueueElem *prevElem = currentElem->prev;
+  assert(prevElem != NULL, "Previous element should not be null.");
+  return prevElem->token;
 }
 
 /* Initialise a new stack. */
@@ -171,8 +187,9 @@ int isNumber(char* word) {
 }
 
 /* Parses a token. */
-void parse(struct Stack* stack, struct Token* token) {
+void parseQueueElem(struct Stack* stack, struct QueueElem* queueElem) {
   assert(OPS_COUNT == 17, "Update control flow in parse().");
+  struct Token *token = queueElem->token;
   if (token->OP_TYPE == OP_INT) {
     pushStack(stack, token->value);
   } else if (token->OP_TYPE == OP_ADD) {
@@ -305,11 +322,13 @@ int main(int argc, char* argv[]) {
   int pos = 0;
   while(fscanf(sourceptr, "%s", word) != EOF) {
     struct Token *token = makeToken(pos, word);
-    /* parse(stack, token); */
     pushQueue(instructions, token);
     pos = ftell(sourceptr);
   }
-  /* TODO: Parse the queue instead of directly. */
+  while(!isEmptyQueue(instructions)) {
+    struct QueueElem* elem = pollQueue(instructions);
+    parseQueueElem(stack, elem);
+  }
   fclose(sourceptr);
   return 0;
 }

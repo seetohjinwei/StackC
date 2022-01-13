@@ -46,7 +46,6 @@ To be implemented:
 Some tests are available in `tests` folder, each `.fth` file is matched with a `.o` file which is the code and the expected result respectively. These tests are run automatically by `test.py`, which must be executed in the root directory.
 
 To do:
-- Parse all tokens into an deque (doubly-linked list) to process
 - Remainder operation
 - Inequality GTE, LTE, GT, LT operations
 - `if` statements
