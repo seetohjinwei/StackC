@@ -2,7 +2,7 @@
 
 This language is heavily inspired by [Forth](https://en.wikipedia.org/wiki/Forth_\(programming_language\)), a stack-based programming language.
 
-This link is useful for learning [Forth syntax].(https://skilldrick.github.io/easyforth/)
+This link is useful for learning [Forth syntax](https://skilldrick.github.io/easyforth/).
 
 This interpreter is written in C. Testing framework is written in Python.
 
@@ -26,10 +26,13 @@ Pushes the integer onto the stack. Integers are 32-bit integers.
 
 The following words will print into standard output. Will have an error if the operation causes stack underflow.
 
-`,`    -- peeks at the top of the stack, without removing it, printing the literal integer.
-`.`    -- pops from the top of the stack, removing it, printing the integer literal.
-`emit` -- similar to `.` but prints the ASCII equivalent instead.
-`.s`   -- prints the size of the current stack.
+| Word | Description |
+| --- | --- |
+| `,` | peeks at the top of the stack, without removing it, printing the literal integer. |
+| `.` | pops from the top of the stack, removing it, printing the integer literal. |
+| `emit` | similar to `.` but prints the ASCII equivalent instead. |
+| `.s` | prints the size of the current stack. |
+| `cr` | prints a new line |
 
 ```
 65 1 2 3
@@ -48,11 +51,13 @@ Used as in Reverse Polish Notation, e.g. `1 2 +` (RPN) === `1 + 2` (usual infix 
 
 The follow operations pop 2 elements off the stack and push the result back on it.
 
-`+` -- adds the two elements
-`-` -- subtracts the two elements
-`*` -- multiples the two elements
-`/` -- floor divides the two elements
-`%` -- remainder of the two elements
+| Word | Description |
+| --- | --- |
+| `+` | adds the two elements |
+| `-` | subtracts the two elements |
+| `*` | multiplies the two elements |
+| `/` | floor divides the two elements |
+| `%` | remainder of the two elements |
 
 ```
 1 2 + .  -- prints 3
@@ -66,11 +71,13 @@ The follow operations pop 2 elements off the stack and push the result back on i
 
 The following operations pop 2 elements off the stack and push 0 (if false) and 1 (if true) back on it.
 
-`=`  -- checks for equality
-`>=` -- greater than or equals
-`<=` -- lesser than or equals
-`>`  -- greater than
-`<`  -- lesser than
+| Word | Description |
+| --- | --- |
+| `=` | checks for equality |
+| `>=` | greater than or equals |
+| `<=` | lesser than or equals |
+| `>` | greater than |
+| `<` | lesser than |
 
 ```
 1 1 = .    -- prints 1 (true)
@@ -84,13 +91,13 @@ The following operations pop 2 elements off the stack and push 0 (if false) and 
 
 ### Stack Manipulation
 
-`dup`  -- duplicates the first element
-`drop` -- pops the first element
-`swap` -- swaps the first two elements
-`over` -- duplicates the second element and pushes it to the top
-`rot`  -- rotates the first 3 elements
-    `1 2 3 rot . . .` -- prints `1 3 2`
-`cr`   -- prints a new line
+| Word | Description |
+| --- | --- |
+| `dup` | duplicates the first element |
+| `drop` | pops the first element |
+| `swap` | swaps the first two elements |
+| `over` | duplicates the second element and pushes it to the top |
+| `rot` | rotates the first 3 elements, `1 2 3 rot . . .` -- prints `1 3 2` |
 
 ## Tests
 
