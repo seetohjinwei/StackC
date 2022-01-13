@@ -220,23 +220,23 @@ void parseQueueElem(struct Stack* stack, struct QueueElem* queueElem) {
   } else if (token->OP_TYPE == OP_EQU) {
     int a = popStack(stack);
     int b = popStack(stack);
-    pushStack(stack, a != b ? 0 : 1);
+    pushStack(stack, a == b ? 1 : 0);
   } else if (token->OP_TYPE == OP_GTE) {
-    int a = popStack(stack);
     int b = popStack(stack);
-    pushStack(stack, a >= b ? 0 : 1);
+    int a = popStack(stack);
+    pushStack(stack, a >= b ? 1 : 0);
   } else if (token->OP_TYPE == OP_LTE) {
-    int a = popStack(stack);
     int b = popStack(stack);
-    pushStack(stack, a <= b ? 0 : 1);
+    int a = popStack(stack);
+    pushStack(stack, a <= b ? 1 : 0);
   } else if (token->OP_TYPE == OP_GT) {
-    int a = popStack(stack);
     int b = popStack(stack);
-    pushStack(stack, a > b ? 0 : 1);
+    int a = popStack(stack);
+    pushStack(stack, a > b ? 1 : 0);
   } else if (token->OP_TYPE == OP_LT) {
-    int a = popStack(stack);
     int b = popStack(stack);
-    pushStack(stack, a < b ? 0 : 1);
+    int a = popStack(stack);
+    pushStack(stack, a < b ? 1 : 0);
   } else if (token->OP_TYPE == OP_PEEK) {
     int top = peekStack(stack);
     printf("%d\n", top);
