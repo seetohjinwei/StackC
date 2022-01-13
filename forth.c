@@ -5,7 +5,7 @@
 /* Python-like assertions. */
 int assert(int truth, char *message) {
   if (truth == 0) {
-    printf("ERROR: %s\n", message);
+    printf("Assertion Error: %s\n", message);
     exit(1);
   } else {
     return 1;
@@ -19,7 +19,12 @@ enum OPS {
   OP_SUB,
   OP_MUL,
   OP_DIV,
+  OP_REM,
   OP_EQU,
+  OP_GTE,
+  OP_LTE,
+  OP_GT,
+  OP_LT,
   OP_PEEK,
   OP_POP,
   OP_EMIT,
@@ -188,7 +193,7 @@ int isNumber(char* word) {
 
 /* Parses a token. */
 void parseQueueElem(struct Stack* stack, struct QueueElem* queueElem) {
-  assert(OPS_COUNT == 17, "Update control flow in parse().");
+  assert(OPS_COUNT == 22, "Update control flow in parse().");
   struct Token *token = queueElem->token;
   if (token->OP_TYPE == OP_INT) {
     pushStack(stack, token->value);
@@ -208,10 +213,30 @@ void parseQueueElem(struct Stack* stack, struct QueueElem* queueElem) {
     int a = popStack(stack);
     int b = popStack(stack);
     pushStack(stack, b / a);
+  } else if (token->OP_TYPE == OP_REM) {
+    int a = popStack(stack);
+    int b = popStack(stack);
+    pushStack(stack, b % a);
   } else if (token->OP_TYPE == OP_EQU) {
     int a = popStack(stack);
     int b = popStack(stack);
     pushStack(stack, a != b ? 0 : 1);
+  } else if (token->OP_TYPE == OP_GTE) {
+    int a = popStack(stack);
+    int b = popStack(stack);
+    pushStack(stack, a >= b ? 0 : 1);
+  } else if (token->OP_TYPE == OP_LTE) {
+    int a = popStack(stack);
+    int b = popStack(stack);
+    pushStack(stack, a <= b ? 0 : 1);
+  } else if (token->OP_TYPE == OP_GT) {
+    int a = popStack(stack);
+    int b = popStack(stack);
+    pushStack(stack, a > b ? 0 : 1);
+  } else if (token->OP_TYPE == OP_LT) {
+    int a = popStack(stack);
+    int b = popStack(stack);
+    pushStack(stack, a < b ? 0 : 1);
   } else if (token->OP_TYPE == OP_PEEK) {
     int top = peekStack(stack);
     printf("%d\n", top);
@@ -258,7 +283,7 @@ struct Token* makeToken(int pos, char *word) {
   token = (struct Token*) malloc(sizeof(struct Token));
   token->pos = pos;
   token->value = 0;
-  assert(OPS_COUNT == 17, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 22, "Update control flow in makeToken().");
   // control flow to decide type of operation
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;
@@ -271,8 +296,18 @@ struct Token* makeToken(int pos, char *word) {
     token->OP_TYPE = OP_MUL;
   } else if (strcmp(word, "/") == 0) {
     token->OP_TYPE = OP_DIV;
+  } else if (strcmp(word, "%") == 0) {
+    token->OP_TYPE = OP_REM;
   } else if (strcmp(word, "=") == 0) {
     token->OP_TYPE = OP_EQU;
+  } else if (strcmp(word, ">=") == 0) {
+    token->OP_TYPE = OP_GTE;
+  } else if (strcmp(word, "<=") == 0) {
+    token->OP_TYPE = OP_LTE;
+  } else if (strcmp(word, ">") == 0) {
+    token->OP_TYPE = OP_GT;
+  } else if (strcmp(word, "<") == 0) {
+    token->OP_TYPE = OP_LT;
   } else if (strcmp(word, ",") == 0) {
     token->OP_TYPE = OP_PEEK;
   } else if (strcmp(word, ".") == 0) {
