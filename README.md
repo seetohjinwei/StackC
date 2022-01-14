@@ -225,15 +225,25 @@ If you think this violates the idea of a stack-based language too much, then fee
 
 ## Tests
 
-Some tests are available in `tests` folder, each `.fth` file is matched with a `.o` file which is the code and the expected result respectively. These tests are run automatically by `test.py`, which must be executed in the root directory.
+Some tests are available in `tests` folder, each `.fth` file is matched with a `.o` file which is the code and the expected result (stdout) respectively. These tests are run automatically by `test.py`, which must be executed in the root directory.
+
+### Quick Usage of Tests
+
+`./test.py` or `python3 test.py`
+
+### Flags
+
+| Flag | Description |
+| --- | --- |
+| `f` | Creates (if it does not exist) and updates all `.o` files with the current `.fth` stdout. |
+| `v` | Verbose output. Displays stdout of the evaluation when there is a non-zero exit code. |
+
+`./test.py -f` or `./test.py -fv`
 
 ## TODO
 
+- use typedef for structs?
 - Power (exponent)
 - Bitwise operations
 - `while` and `for` (`do` loop) loop
-- String printing `." --multiple ASCII Integers-- end`
-- Better testing framework (especially for verifying errors)
-- If error is detected, test.py should print to stdout as well (if not supposed to be).
-- In `test.py` auto-update `.o`s, with some argument like `--force-update` or something
 - Allow user-defined words
