@@ -6,6 +6,15 @@ This link is useful for learning [Forth syntax](https://skilldrick.github.io/eas
 
 This interpreter is written in C. Testing framework is written in Python.
 
+## Quick Setup
+
+Minimally you only need to download `forth.c` and compile it with a C compiler. Then, you can run the executable with your program name as the argument.
+
+```
+gcc forth.c -o forth
+./forth your_program
+```
+
 ## Words
 
 Words must be separated with either a ` ` (space character) or `\n` (new line).
@@ -100,6 +109,50 @@ The following operations pop 2 elements off the stack and push 0 (if false) and 
 5 5 < .    -- prints 0 (false)
 ```
 
+### Control Flow
+
+#### `if` and `elseif` words
+
+`if` will pop the first element off the stack and treat it as a boolean. The following example will hopefully explain it better than I can.
+
+Nested if/else are also supported!
+
+```
+-- in this language
+1 0      -- pushing `1` and `0` onto the stack       (stack: [1, 0])
+if       -- 0 is popped off the stack and is false   (stack: [1])
+  12 .   -- skipped
+elseif   -- 1 is popped off the stack and is true    (stack: [])
+  2 1 -  --                                          (stack: [1])
+  if     -- 1 is popped and is true                  (stack: [])
+    23 . -- 23 will be printed
+  else
+    34 .
+  end
+else     -- elseif will skip to end
+  45 .   -- not evaluated
+end
+```
+
+```python
+# equivalent program in python
+stack = []               # to simulate stack
+stack.append(1)
+stack.append(0)
+
+if stack.pop():
+  print(12)
+elif stack.pop():
+  stack.append(2 - 1)
+  if stack.pop():
+    print(23)             # 23 is printed
+  else:
+    print(34)
+else:
+  print(45)
+```
+
+
 ### Stack Manipulation
 
 | Word | Description |
@@ -110,14 +163,30 @@ The following operations pop 2 elements off the stack and push 0 (if false) and 
 | `over` | duplicates the second element and pushes it to the top |
 | `rot` | rotates the first 3 elements, `1 2 3 rot . . .` -- prints `1 3 2` |
 
+### Memory
+
+There is a integer array (of size 100) for the program to utilise. All values in the array is initialised to be 0 when the program is ran. It is implemented with a C array so there is random memory access.
+
+This is created for conveniences like having global variables or when creating loops or whatever else you find a use for!
+
+If you think this violates the idea of a stack-based language too much, then feel free to just not use these. If these keywords are not found in the program, the array is never initialised in the interpreter.
+
+| Word | Description |
+| --- | --- |
+| `mem A` | pops the first element off the stack and saves it to index `A` |
+| `memr A` | pushes the value of index `A` onto the stack |
+
 ## Tests
 
 Some tests are available in `tests` folder, each `.fth` file is matched with a `.o` file which is the code and the expected result respectively. These tests are run automatically by `test.py`, which must be executed in the root directory.
 
 ## TODO
+
 - Power (exponent)
-- `if` statements
+- Bitwise operations
 - `while` and `for` (`do` loop) loop
 - String printing `." --multiple ASCII Integers-- end`
 - Better testing framework (especially for verifying errors)
+- If error is detected, test.py should print to stdout as well (if not supposed to be).
+- In `test.py` auto-update `.o`s, with some argument like `--force-update` or something
 - Allow user-defined words

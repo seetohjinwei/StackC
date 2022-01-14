@@ -3,7 +3,7 @@
 all: forth run_script
 
 run_script:
-	python3 test.py
+	./test.py
 
 forth: forth.c
 	gcc -Wall forth.c -o forth
