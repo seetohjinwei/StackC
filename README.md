@@ -242,7 +242,6 @@ Some tests are available in `tests` folder, each `.fth` file is matched with a `
 
 ## TODO
 
-- use typedef for structs?
 - Power (exponent)
 - Bitwise operations
 - `while` and `for` (`do` loop) loop

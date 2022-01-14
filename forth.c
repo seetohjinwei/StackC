@@ -6,7 +6,7 @@
 #define MAX_STRING_SIZE 1000
 #define MEM_SIZE 100
 
-enum OPS {
+typedef enum OPS {
   OP_UNKNOWN,
   OP_INT,
   OP_ADD,
@@ -37,45 +37,51 @@ enum OPS {
   OP_MEM,
   OP_MEMR,
   OPS_COUNT // size of enum OPS
-};
+} OPS;
+
+typedef struct Queue Queue;
+typedef struct QueueElem QueueElem;
+typedef struct Node Node;
+typedef struct Stack Stack;
+typedef struct Token Token;
 
 /* Doubly Linked List implementation of a queue. */
 /* Does not break links between elements when polling. */
 
-struct Queue {
+typedef struct Queue {
   int size;
-  struct QueueElem* head;
-  struct QueueElem* tail;
-};
+  QueueElem* head;
+  QueueElem* tail;
+} Queue;
 
-struct QueueElem {
-  struct Token* token;
-  struct QueueElem* prev;
-  struct QueueElem* next;
-};
+typedef struct QueueElem {
+  Token* token;
+  QueueElem* prev;
+  QueueElem* next;
+} QueueElem;
 
 /* Linked List implementation of a stack. */
 
-struct Node {
+typedef struct Node {
   int value;
-  struct Node* next;
-};
+  Node* next;
+} Node;
 
-struct Stack {
+typedef struct Stack {
   int size;
-  struct Node* root;
-};
+  Node* root;
+} Stack;
 
-struct Token {
+typedef struct Token {
   int row;
   int col;
-  enum OPS OP_TYPE;
+  OPS OP_TYPE;
   int value;
   char word[MAX_WORD_SIZE];
-};
+} Token;
 
 /* Print Token for debugging. */
-void printToken(struct Token* token) {
+void printToken(Token* token) {
   printf("-- Token --\n");
   printf("Position: %d %d\n", token->row, token->col);
   printf("OP_TYPE: %d\n", token->OP_TYPE);
@@ -84,7 +90,7 @@ void printToken(struct Token* token) {
 }
 
 /* Assert with Token. */
-int assertWithToken(int truth, char *message, struct Token* token) {
+int assertWithToken(int truth, char *message, Token* token) {
   if (truth == 0) {
     printf("Assertion Error: %s\n", message);
     if (token != NULL) {
@@ -102,9 +108,9 @@ int assert(int truth, char *message) {
 }
 
 /* Initialise a new queue. */
-struct Queue* newQueue(void) {
-  struct Queue *queue;
-  queue = (struct Queue*) malloc(sizeof(struct Queue));
+Queue* newQueue(void) {
+  Queue *queue;
+  queue = (Queue*) malloc(sizeof(Queue));
   queue->size = 0;
   queue->head = NULL;
   queue->tail = NULL;
@@ -112,14 +118,14 @@ struct Queue* newQueue(void) {
 }
 
 /* Checking if a queue is empty. */
-int isEmptyQueue(struct Queue* queue) {
+int isEmptyQueue(Queue* queue) {
   return queue->size == 0;
 }
 
 /* Push to queue. */
-void pushQueue(struct Queue* queue, struct Token* token) {
-  struct QueueElem *elem;
-  elem = (struct QueueElem*) malloc(sizeof(struct QueueElem));
+void pushQueue(Queue* queue, Token* token) {
+  QueueElem *elem;
+  elem = (QueueElem*) malloc(sizeof(QueueElem));
   elem->token = token;
   elem->next = NULL;
   if (isEmptyQueue(queue)) {
@@ -127,7 +133,7 @@ void pushQueue(struct Queue* queue, struct Token* token) {
     queue->tail = elem;
     elem->prev = NULL;
   } else {
-    struct QueueElem *prevLast = queue->tail;
+    QueueElem *prevLast = queue->tail;
     prevLast->next = elem;
     elem->prev = prevLast;
     queue->tail = elem;
@@ -136,10 +142,10 @@ void pushQueue(struct Queue* queue, struct Token* token) {
 }
 
 /* Poll head of queue. */
-struct QueueElem* pollQueue(struct Queue* queue) {
+QueueElem* pollQueue(Queue* queue) {
   assert(!isEmptyQueue(queue), "Polling from empty queue.");
-  struct QueueElem *prevHead = queue->head;
-  struct QueueElem *newHead = prevHead->next;
+  QueueElem *prevHead = queue->head;
+  QueueElem *newHead = prevHead->next;
   queue->head = newHead;
   /* newHead will maintain the reference to the now polled prev. */
   queue->size--;
@@ -147,36 +153,36 @@ struct QueueElem* pollQueue(struct Queue* queue) {
 }
 
 /* Peek head of queue. */
-struct QueueElem* peekQueue(struct Queue* queue) {
+QueueElem* peekQueue(Queue* queue) {
   assert(!isEmptyQueue(queue), "Peeking empty queue.");
   return queue->head;
 }
 
 /* Get previous queue even when polled. */
-struct QueueElem* prevQueueElem(struct QueueElem* currentElem) {
-  struct QueueElem *prevElem = currentElem->prev;
+QueueElem* prevQueueElem(QueueElem* currentElem) {
+  QueueElem *prevElem = currentElem->prev;
   assert(prevElem != NULL, "Previous element should not be null.");
   return prevElem;
 }
 
 /* Initialise a new stack. */
-struct Stack* newStack(void) {
-  struct Stack *stack;
-  stack = (struct Stack*) malloc(sizeof(struct Stack));
+Stack* newStack(void) {
+  Stack *stack;
+  stack = (Stack*) malloc(sizeof(Stack));
   stack->size = 0;
   stack->root = NULL;
   return stack;
 }
 
 /* Checking if a stack is empty. */
-int isEmptyStack(struct Stack* stack) {
+int isEmptyStack(Stack* stack) {
   return stack->size == 0;
 }
 
 /* Push an integer onto a stack. */
-int pushStack(struct Stack* stack, int value) {
-  struct Node* newNode;
-  newNode = (struct Node*) malloc(sizeof(struct Node));
+int pushStack(Stack* stack, int value) {
+  Node* newNode;
+  newNode = (Node*) malloc(sizeof(Node));
   newNode->value = value;
   newNode->next = stack->root;
   stack->root = newNode;
@@ -185,15 +191,15 @@ int pushStack(struct Stack* stack, int value) {
 }
 
 /* Peek at the first element of the stack. */
-int peekStack(struct Stack* stack) {
+int peekStack(Stack* stack) {
   assert(!isEmptyStack(stack), "Stack underflow while peeking stack.\n");
   return stack->root->value;
 }
 
 /* Pops the first element of the stack. */
-int popStack(struct Stack* stack) {
+int popStack(Stack* stack) {
   assert(!isEmptyStack(stack), "Stack underflow while popping stack.\n");
-  struct Node* poppedNode = stack->root;
+  Node* poppedNode = stack->root;
   stack->root = poppedNode->next;
   stack->size--;
   return poppedNode->value;
@@ -217,13 +223,13 @@ int isNumber(char* word) {
 }
 
 /* Declaration here to use it in controlIf. */
-void parseQueue(struct Stack* stack, struct Queue* instructions, int *mem);
+void parseQueue(Stack* stack, Queue* instructions, int *mem);
 
 /* Jumps to one of the specified OP_TYPEs. Used in control flow. */
-void jumpTo(struct Stack* stack, struct Queue* instructions, int *mem, int *jumpPoints, size_t jumpPointsSize) {
-  struct Token *startToken = peekQueue(instructions)->token;
+void jumpTo(Stack* stack, Queue* instructions, int *mem, int *jumpPoints, size_t jumpPointsSize) {
+  Token *startToken = peekQueue(instructions)->token;
   while (!isEmptyQueue(instructions)) {
-    struct Token *token = peekQueue(instructions)->token;
+    Token *token = peekQueue(instructions)->token;
     int i;
     if (token->OP_TYPE == OP_IF) {
       parseQueue(stack, instructions, mem);
@@ -239,17 +245,17 @@ void jumpTo(struct Stack* stack, struct Queue* instructions, int *mem, int *jump
 }
 
 /* Specific version of jumpTo, for convenience. */
-void jumpToEnd(struct Stack* stack, struct Queue* instructions, int *mem) {
+void jumpToEnd(Stack* stack, Queue* instructions, int *mem) {
   int jumpPoints[1] = {OP_END};
   jumpTo(stack, instructions, mem, jumpPoints, 1);
 }
 
 /* Called when parseQueue() encounters a OP_IF. */
-void controlIf(struct Stack* stack, struct Queue* instructions, int *mem) {
+void controlIf(Stack* stack, Queue* instructions, int *mem) {
   /* OP_IF token is already polled, so don't double poll. */
   int isIF = 1;
   while (!isEmptyQueue(instructions)) {
-    struct Token* instructionToken;
+    Token* instructionToken;
     if (isIF) {
       instructionToken = prevQueueElem(peekQueue(instructions))->token;
       isIF = 0;
@@ -261,7 +267,7 @@ void controlIf(struct Stack* stack, struct Queue* instructions, int *mem) {
       return;
     } else if (type == OP_ELSE) {
       while(!isEmptyQueue(instructions)) {
-        struct Token* current = peekQueue(instructions)->token;
+        Token* current = peekQueue(instructions)->token;
         if (current->OP_TYPE == OP_ELSE) {
           assertWithToken(0, "`else` found after `else`", instructionToken);
         } else if (current->OP_TYPE == OP_ELSEIF) {
@@ -281,7 +287,7 @@ void controlIf(struct Stack* stack, struct Queue* instructions, int *mem) {
         int jumpPoints[3] = {OP_ELSE, OP_ELSEIF, OP_END};
         jumpTo(stack, instructions, mem, jumpPoints, 3);
       } else {
-        struct Token* next;
+        Token* next;
         while(!isEmptyQueue(instructions)) {
           next = peekQueue(instructions)->token;
           if (next->OP_TYPE == OP_ELSE) {
@@ -305,10 +311,10 @@ void controlIf(struct Stack* stack, struct Queue* instructions, int *mem) {
 }
 
 /* Parses a token. */
-void parseQueue(struct Stack* stack, struct Queue* instructions, int *mem) {
+void parseQueue(Stack* stack, Queue* instructions, int *mem) {
   assert(OPS_COUNT == 29, "Update control flow in parse().");
-  struct QueueElem *queueElem = pollQueue(instructions);
-  struct Token *token = queueElem->token;
+  QueueElem *queueElem = pollQueue(instructions);
+  Token *token = queueElem->token;
   if (token->OP_TYPE == OP_INT) {
     pushStack(stack, token->value);
   } else if (token->OP_TYPE == OP_ADD) {
@@ -393,7 +399,7 @@ void parseQueue(struct Stack* stack, struct Queue* instructions, int *mem) {
     memset(string, 0, sizeof(string));
     int index = 0;
     while (!isEmptyQueue(instructions)) {
-      struct Token *word = pollQueue(instructions)->token;
+      Token *word = pollQueue(instructions)->token;
       if (word->OP_TYPE == OP_END) {
         printf("%s\n", string);
         return;
@@ -424,13 +430,13 @@ void parseQueue(struct Stack* stack, struct Queue* instructions, int *mem) {
   } else if (token->OP_TYPE == OP_END) {
     assertWithToken(0, "`end` word without starting.", token);
   } else if (token->OP_TYPE == OP_MEM) {
-    struct Token *indexToken = pollQueue(instructions)->token;
+    Token *indexToken = pollQueue(instructions)->token;
     int index = indexToken->value;
     assertWithToken(index >= 0, "Memory index must be non-negative.", indexToken);
     assertWithToken(index < MEM_SIZE, "Memory index is too large.", indexToken);
     mem[index] = popStack(stack);
   } else if (token->OP_TYPE == OP_MEMR) {
-    struct Token *indexToken = pollQueue(instructions)->token;
+    Token *indexToken = pollQueue(instructions)->token;
     int index = indexToken->value;
     assertWithToken(index >= 0, "Memory index must be non-negative.", indexToken);
     assertWithToken(index < MEM_SIZE, "Memory index is too large.", indexToken);
@@ -444,9 +450,9 @@ void parseQueue(struct Stack* stack, struct Queue* instructions, int *mem) {
   }
 }
 
-struct Token* makeToken(int row, int col, char *word) {
-  struct Token* token;
-  token = (struct Token*) malloc(sizeof(struct Token));
+Token* makeToken(int row, int col, char *word) {
+  Token* token;
+  token = (Token*) malloc(sizeof(Token));
   token->row = row;
   token->col = col;
   token->value = 0;
@@ -529,8 +535,8 @@ int main(int argc, char* argv[]) {
     assert(source == NULL, message);
   }
 
-  struct Queue* instructions = newQueue();
-  struct Stack* stack = newStack();
+  Queue* instructions = newQueue();
+  Stack* stack = newStack();
   int isMemUsed = 0;
   /* `mem` is initialised only if actually used in the program. */
   int mem[MEM_SIZE];
@@ -559,7 +565,7 @@ int main(int argc, char* argv[]) {
           /* Skipping multiple spaces. */
           continue;
         }
-        struct Token *token = makeToken(row, lineIndex - wordIndex, word);
+        Token *token = makeToken(row, lineIndex - wordIndex, word);
         /* Only initialises `mem` if actually used. */
         if (token->OP_TYPE == OP_MEM || token->OP_TYPE == OP_MEMR) {
           isMemUsed = 1;
