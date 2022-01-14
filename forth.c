@@ -3,6 +3,7 @@
 #include <string.h>
 
 #define MAX_WORD_SIZE 256
+#define MAX_STRING_SIZE 1000
 #define MEM_SIZE 100
 
 enum OPS {
@@ -28,6 +29,7 @@ enum OPS {
   OP_SWAP,
   OP_OVER,
   OP_ROT,
+  OP_STR,
   OP_IF,
   OP_ELSEIF,
   OP_ELSE,
@@ -69,6 +71,7 @@ struct Token {
   int col;
   enum OPS OP_TYPE;
   int value;
+  char word[MAX_WORD_SIZE];
 };
 
 /* Print Token for debugging. */
@@ -77,6 +80,7 @@ void printToken(struct Token* token) {
   printf("Position: %d %d\n", token->row, token->col);
   printf("OP_TYPE: %d\n", token->OP_TYPE);
   printf("Value: %d\n", token->value);
+  printf("Word: %s\n", token->word);
 }
 
 /* Assert with Token. */
@@ -229,7 +233,6 @@ void jumpTo(struct Stack* stack, struct Queue* instructions, int *mem, int *jump
         return;
       }
     }
-    /* printf("jumpTo\n"); */
     pollQueue(instructions);
   }
   assertWithToken(0, "No `end` word in control flow.", startToken);
@@ -238,17 +241,14 @@ void jumpTo(struct Stack* stack, struct Queue* instructions, int *mem, int *jump
 /* Specific version of jumpTo, for convenience. */
 void jumpToEnd(struct Stack* stack, struct Queue* instructions, int *mem) {
   int jumpPoints[1] = {OP_END};
-  /* printf("jumpToEnd\n"); */
   jumpTo(stack, instructions, mem, jumpPoints, 1);
 }
 
 /* Called when parseQueue() encounters a OP_IF. */
 void controlIf(struct Stack* stack, struct Queue* instructions, int *mem) {
-  /* printf("controlIf() is called\n"); */
   /* OP_IF token is already polled, so don't double poll. */
   int isIF = 1;
   while (!isEmptyQueue(instructions)) {
-    /* printf("controlIf main whileloop\n"); */
     struct Token* instructionToken;
     if (isIF) {
       instructionToken = prevQueueElem(peekQueue(instructions))->token;
@@ -258,7 +258,6 @@ void controlIf(struct Stack* stack, struct Queue* instructions, int *mem) {
     }
     int type = instructionToken->OP_TYPE;
     if (type == OP_END) {
-      /* printf("end of controlIf\n"); */
       return;
     } else if (type == OP_ELSE) {
       while(!isEmptyQueue(instructions)) {
@@ -269,7 +268,6 @@ void controlIf(struct Stack* stack, struct Queue* instructions, int *mem) {
           assertWithToken(0, "`elseif` found after `else`", instructionToken);
         } else if (current->OP_TYPE == OP_END) {
           /* consume OP_END */
-          /* printf("end of else in control if\n"); */
           pollQueue(instructions);
           return;
         }
@@ -287,7 +285,6 @@ void controlIf(struct Stack* stack, struct Queue* instructions, int *mem) {
         while(!isEmptyQueue(instructions)) {
           next = peekQueue(instructions)->token;
           if (next->OP_TYPE == OP_ELSE) {
-            /* printf("jumpToEnd after `else`"); */
             jumpToEnd(stack, instructions, mem);
             break;
           } else if (next->OP_TYPE == OP_ELSEIF) {
@@ -307,12 +304,9 @@ void controlIf(struct Stack* stack, struct Queue* instructions, int *mem) {
   }
 }
 
-/* FIX: Suspect jumpTo is not jumping to correct point! */
-
 /* Parses a token. */
 void parseQueue(struct Stack* stack, struct Queue* instructions, int *mem) {
-  assert(OPS_COUNT == 28, "Update control flow in parse().");
-  /* printf("parseQueue\n"); */
+  assert(OPS_COUNT == 29, "Update control flow in parse().");
   struct QueueElem *queueElem = pollQueue(instructions);
   struct Token *token = queueElem->token;
   if (token->OP_TYPE == OP_INT) {
@@ -393,6 +387,34 @@ void parseQueue(struct Stack* stack, struct Queue* instructions, int *mem) {
     pushStack(stack, b);
     pushStack(stack, c);
     pushStack(stack, a);
+  } else if (token->OP_TYPE == OP_STR) {
+    /* Parsing a string. */
+    char string[MAX_STRING_SIZE];
+    memset(string, 0, sizeof(string));
+    int index = 0;
+    while (!isEmptyQueue(instructions)) {
+      struct Token *word = pollQueue(instructions)->token;
+      if (word->OP_TYPE == OP_END) {
+        printf("%s\n", string);
+        return;
+      } else {
+        char current;
+        size_t i;
+        for (i = 0; i < MAX_WORD_SIZE; i++) {
+          current = word->word[i];
+          if (current == 0) {
+            /* 0 is the EOF character */
+            break;
+          }
+          assertWithToken(index < MAX_STRING_SIZE, "String too long.", token);
+          string[index++] = current;
+        }
+        /* Add space after each word */
+        assertWithToken(index < MAX_STRING_SIZE, "String too long.", token);
+        string[index++] = ' ';
+      }
+    }
+    assertWithToken(0, "`.\"` without `end`.", token);
   } else if (token->OP_TYPE == OP_IF) {
     controlIf(stack, instructions, mem);
   } else if (token->OP_TYPE == OP_ELSE) {
@@ -413,6 +435,10 @@ void parseQueue(struct Stack* stack, struct Queue* instructions, int *mem) {
     assertWithToken(index >= 0, "Memory index must be non-negative.", indexToken);
     assertWithToken(index < MEM_SIZE, "Memory index is too large.", indexToken);
     pushStack(stack, mem[index]);
+  } else if (token->OP_TYPE == OP_UNKNOWN) {
+    char *message;
+    asprintf(&message, "Word `%s` not implemented yet.", token->word);
+    assertWithToken(0, message, token);
   } else {
     assertWithToken(0, "Unreachable code.", token);
   }
@@ -424,7 +450,8 @@ struct Token* makeToken(int row, int col, char *word) {
   token->row = row;
   token->col = col;
   token->value = 0;
-  assert(OPS_COUNT == 28, "Update control flow in makeToken().");
+  strncpy(token->word, word, MAX_WORD_SIZE);
+  assert(OPS_COUNT == 29, "Update control flow in makeToken().");
   // control flow to decide type of operation
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;
@@ -469,6 +496,8 @@ struct Token* makeToken(int row, int col, char *word) {
     token->OP_TYPE = OP_OVER;
   } else if (strcmp(word, "rot") == 0) {
     token->OP_TYPE = OP_ROT;
+  } else if (strcmp(word, ".\"") == 0) {
+    token->OP_TYPE = OP_STR;
   } else if (strcmp(word, "if") == 0) {
     token->OP_TYPE = OP_IF;
   } else if (strcmp(word, "else") == 0) {
@@ -483,9 +512,6 @@ struct Token* makeToken(int row, int col, char *word) {
     token->OP_TYPE = OP_MEMR;
   } else {
     token->OP_TYPE = OP_UNKNOWN;
-    char *message;
-    asprintf(&message, "Word %s not implemented yet.", word);
-    assertWithToken(0, message, token);
   }
   return token;
 }

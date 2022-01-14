@@ -2,7 +2,7 @@
 
 This language is heavily inspired by [Forth](https://en.wikipedia.org/wiki/Forth_\(programming_language\)), a stack-based programming language.
 
-This link is useful for learning [Forth syntax](https://skilldrick.github.io/easyforth/).
+This link is useful for learning [Forth syntax](https://skilldrick.github.io/easyforth/). However, do note that I do not follow all of the syntax in standard Forth.
 
 This interpreter is written in C. Testing framework is written in Python.
 
@@ -17,9 +17,22 @@ gcc forth.c -o forth
 
 ## Words
 
-Words must be separated with either a ` ` (space character) or `\n` (new line).
+Words must be separated with either a ` ` (space character) or `\n` (new line). You can have multiple spaces or new line characters (even mixed around) successively, they are treated as a single separator.
 
-## Comments
+```
+1    2 + .
+```
+
+```
+1
+2 +
+
+.
+```
+
+The above two programs are equivalent (aside from readability).
+
+### Comments
 
 Comments are declared by `--`, every character after `--` is ignored by the interpreter.
 
@@ -28,13 +41,8 @@ Comments are declared by `--`, every character after `--` is ignored by the inte
 -- Anything after `--` is ignored.
 -- . . . . .
 -- Does not cause stack underflow because it is not ran!
+65 emit -- prints an `A` character
 ```
-
-## Booleans
-
-`0` is considered `false`.
-
-`1` (or any non-zero integer) is considered `true`. However, `1` is preferred.
 
 ### Integer
 
@@ -42,28 +50,11 @@ Pushes the integer onto the stack. Integers are 32-bit integers.
 
 `1 2 3 100` pushes `1`,`2`,`3`,`1000` onto the stack in order.
 
-### Printing to Standard Output
+## Booleans
 
-The following words will print into standard output. Will have an error if the operation causes stack underflow.
+`0` is considered `false`.
 
-| Word | Description |
-| --- | --- |
-| `,` | peeks at the top of the stack, without removing it, printing the literal integer. |
-| `.` | pops from the top of the stack, removing it, printing the integer literal. |
-| `emit` | similar to `.` but prints the ASCII equivalent instead. |
-| `.s` | prints the size of the current stack. |
-| `cr` | prints a new line |
-
-```
-65 1 2 3
-,    -- prints 3
-.s   -- prints 4
-.    -- prints 3
-.    -- prints 2
-.    -- prints 1
-emit -- prints `A`
-.s   -- prints 0
-```
+`1` (or any non-zero integer) is considered `true`. However, `1` is preferred.
 
 ### Mathematical Operations
 
@@ -107,6 +98,62 @@ The following operations pop 2 elements off the stack and push 0 (if false) and 
 19 5 <= .  -- prints 0 (false)
 2 1 > .    -- prints 1 (true)
 5 5 < .    -- prints 0 (false)
+```
+
+### Printing to Standard Output
+
+The following words will print into standard output. Will have an error if the operation causes stack underflow.
+
+| Word | Description |
+| --- | --- |
+| `,` | peeks at the top of the stack, without removing it, printing the literal integer. |
+| `.` | pops from the top of the stack, removing it, printing the integer literal. |
+| `emit` | similar to `.` but prints the ASCII equivalent instead. |
+| `.s` | prints the size of the current stack. |
+| `cr` | prints a new line |
+
+```
+65 1 2 3
+,    -- prints 3
+.s   -- prints 4
+.    -- prints 3
+.    -- prints 2
+.    -- prints 1
+emit -- prints `A`
+.s   -- prints 0
+```
+
+### Strings
+
+String functionality is *extremely* limited and only intended to be used for printing short messages.
+
+Any characters between `."` and `end` is evaluated as characters and printed to standard output. There is no way to save strings to the stack.
+
+Do note that there are required space characters after and before `."` and `end` respectively. They will not be printed.
+
+No many how many spaces or newlines there are between each word in the string, it is ignored and replaced with a single space character, *and* there is a extra space and newline character after every string. This is because I parse the file completely before interpreting it and this results in a loss of information about the original spacing between the words. But doing it this way allows me to check for potential errors before interpreting the file.
+
+Also, if you are trying to print `end`, I am afraid that there is no way to escape the `end` keyword. You can probably just print `end.` or something I don't know!
+
+Also also, strings are limited to 1000 characters.
+
+```
+." This is a single line string! end
+
+." This is a
+
+"multi-line"
+
+string
+
+end
+```
+
+will print the following to the standard output
+
+```
+This is a single line string! 
+This is a "multi-line" string 
 ```
 
 ### Control Flow
