@@ -85,6 +85,7 @@ The following operations pop 2 elements off the stack and push 0 (if false) and 
 | Word | Description |
 | --- | --- |
 | `=` | checks for equality |
+| `!=` | checks for not equals |
 | `>=` | greater than or equals |
 | `<=` | lesser than or equals |
 | `>` | greater than |

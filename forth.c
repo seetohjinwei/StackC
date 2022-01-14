@@ -15,6 +15,7 @@ typedef enum OPS {
   OP_DIV,
   OP_REM,
   OP_EQU,
+  OP_NEQU,
   OP_GTE,
   OP_LTE,
   OP_GT,
@@ -312,7 +313,7 @@ void controlIf(Stack* stack, Queue* instructions, int *mem) {
 
 /* Parses a token. */
 void parseQueue(Stack* stack, Queue* instructions, int *mem) {
-  assert(OPS_COUNT == 29, "Update control flow in parse().");
+  assert(OPS_COUNT == 30, "Update control flow in parse().");
   QueueElem *queueElem = pollQueue(instructions);
   Token *token = queueElem->token;
   if (token->OP_TYPE == OP_INT) {
@@ -341,6 +342,10 @@ void parseQueue(Stack* stack, Queue* instructions, int *mem) {
     int a = popStack(stack);
     int b = popStack(stack);
     pushStack(stack, a == b ? 1 : 0);
+  } else if (token->OP_TYPE == OP_NEQU) {
+    int a = popStack(stack);
+    int b = popStack(stack);
+    pushStack(stack, a != b ? 1 : 0);
   } else if (token->OP_TYPE == OP_GTE) {
     int b = popStack(stack);
     int a = popStack(stack);
@@ -457,7 +462,7 @@ Token* makeToken(int row, int col, char *word) {
   token->col = col;
   token->value = 0;
   strncpy(token->word, word, MAX_WORD_SIZE);
-  assert(OPS_COUNT == 29, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 30, "Update control flow in makeToken().");
   // control flow to decide type of operation
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;
@@ -474,6 +479,8 @@ Token* makeToken(int row, int col, char *word) {
     token->OP_TYPE = OP_REM;
   } else if (strcmp(word, "=") == 0) {
     token->OP_TYPE = OP_EQU;
+  } else if (strcmp(word, "!=") == 0) {
+    token->OP_TYPE = OP_NEQU;
   } else if (strcmp(word, ">=") == 0) {
     token->OP_TYPE = OP_GTE;
   } else if (strcmp(word, "<=") == 0) {
