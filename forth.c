@@ -36,6 +36,8 @@ typedef enum OPS {
   OP_THEN,
   OP_WHILE,
   OP_END,
+  OP_DEFWORD,
+  OP_ENDDEF,
   OP_MEM,
   OP_MEMR,
   OPS_COUNT // size of enum OPS
@@ -46,6 +48,8 @@ typedef struct QueueElem QueueElem;
 typedef struct Node Node;
 typedef struct Stack Stack;
 typedef struct Token Token;
+typedef struct Definitions Definitions;
+typedef struct DefWord DefWord;
 
 /* Doubly Linked List implementation of a queue. */
 /* Does not break links between elements when polling. */
@@ -81,6 +85,16 @@ typedef struct Token {
   int value;
   char word[MAX_WORD_SIZE];
 } Token;
+
+typedef struct Definitions {
+  DefWord *head;
+} Definitions;
+
+typedef struct DefWord {
+  char word[MAX_WORD_SIZE];
+  Queue *block;
+  DefWord *next;
+} DefWord;
 
 /* Print Token for debugging. */
 void printToken(Token* token) {
@@ -178,6 +192,22 @@ Queue* copyQueue(Queue* queue) {
   return result;
 }
 
+/* Concats 2 queues, value is saved in the second. */
+void concatQueues(Queue *block, Queue *instructions) {
+  if (isEmptyQueue(block)) {
+    /* do nothing */
+  } else if (isEmptyQueue(instructions)) {
+    instructions->size = block->size;
+    instructions->head = block->head;
+    instructions->tail = block->tail;
+  } else {
+    instructions->size += block->size;
+    block->tail->next = instructions->head;
+    instructions->head->prev = block->tail;
+    instructions->head = block->head;
+  }
+}
+
 /* Initialise a new stack. */
 Stack* newStack(void) {
   Stack *stack;
@@ -218,6 +248,36 @@ int popStack(Stack* stack) {
   return poppedNode->value;
 }
 
+/* Initialise Definitions. */
+Definitions* newDefinitions() {
+  Definitions *definitions;
+  definitions = (Definitions*) malloc(sizeof(Definitions));
+  definitions->head = NULL;
+  return definitions;
+}
+
+/* Add a word definition. */
+void addDefinition(Definitions *definitions, char *word, Queue *block) {
+  DefWord *definition;
+  definition = (DefWord*) malloc(sizeof(DefWord));
+  strncpy(definition->word, word, MAX_WORD_SIZE);
+  definition->block = block;
+  definition->next = definitions->head;
+  definitions->head = definition;
+}
+
+/* Find definition of a word, NULL if not found. */
+DefWord* findDefinition(Definitions *definitions, char *word) {
+  DefWord *definition = definitions->head;
+  while (definition != NULL) {
+    if (strcmp(word, definition->word) == 0) {
+      return definition;
+    }
+    definition = definition->next;
+  }
+  return NULL;
+}
+
 /* Checks if a string is a representation of an integer. */
 int isNumber(char* word) {
   char current;
@@ -236,17 +296,17 @@ int isNumber(char* word) {
 }
 
 /* Declaration here to use it in controlIf. */
-void parseQueue(Stack* stack, Queue* instructions, int *mem, QueueElem* queueElem);
+void parseQueue(Stack* stack, Queue* instructions, int *mem, Definitions* definitions, QueueElem* queueElem);
 
 /* Jumps to one of the specified OP_TYPEs. Used in control flow. */
-void jumpTo(Stack* stack, Queue* instructions, int *mem, int *jumpPoints, size_t jumpPointsSize) {
+void jumpTo(Stack* stack, Queue* instructions, int *mem, Definitions* definitions, int *jumpPoints, size_t jumpPointsSize) {
   Token *startToken = peekQueue(instructions)->token;
   while (!isEmptyQueue(instructions)) {
     Token *token = peekQueue(instructions)->token;
     int type = token->OP_TYPE;
     int i;
     if (type == OP_IF || type == OP_WHILE) {
-      parseQueue(stack, instructions, mem, pollQueue(instructions));
+      parseQueue(stack, instructions, mem, definitions, pollQueue(instructions));
       pollQueue(instructions);
     } else if (type == OP_STR) {
       /* Remove ." to end from instructions. */
@@ -267,13 +327,13 @@ void jumpTo(Stack* stack, Queue* instructions, int *mem, int *jumpPoints, size_t
 }
 
 /* Specific version of jumpTo, for convenience. */
-void jumpToEnd(Stack* stack, Queue* instructions, int *mem) {
+void jumpToEnd(Stack* stack, Queue* instructions, int *mem, Definitions* definitions) {
   int jumpPoints[1] = {OP_END};
-  jumpTo(stack, instructions, mem, jumpPoints, 1);
+  jumpTo(stack, instructions, mem, definitions, jumpPoints, 1);
 }
 
 /* Called when parseQueue() encounters a OP_IF. */
-void controlIf(Stack* stack, Queue* instructions, int *mem, Token* startToken) {
+void controlIf(Stack* stack, Queue* instructions, int *mem, Definitions* definitions, Token* startToken) {
   int startType = startToken->OP_TYPE;
   if (startType == OP_END) {
     return;
@@ -288,23 +348,23 @@ void controlIf(Stack* stack, Queue* instructions, int *mem, Token* startToken) {
       hasThen = 1;
       break;
     }
-    parseQueue(stack, instructions, mem, queueElem);
+    parseQueue(stack, instructions, mem, definitions, queueElem);
   }
   assertWithToken(hasThen, "`then` not found after `if` or `elseif`", startToken);
   int truth = popStack(stack);
   if (truth == 0) {
     /* Jump to next block for evaluation. */
     int jumpPoints[2] = {OP_ELSEIF, OP_END};
-    jumpTo(stack, instructions, mem, jumpPoints, 2);
+    jumpTo(stack, instructions, mem, definitions, jumpPoints, 2);
     Token* next = pollQueue(instructions)->token;
-    controlIf(stack, instructions, mem, next);
+    controlIf(stack, instructions, mem, definitions, next);
   } else {
     int hasEnd = 0;
     while (!isEmptyQueue(instructions)) {
       QueueElem *queueElem = pollQueue(instructions);
       Token *current = queueElem->token;
       if (current->OP_TYPE == OP_ELSEIF) {
-        jumpToEnd(stack, instructions, mem);
+        jumpToEnd(stack, instructions, mem, definitions);
         /* Poll `end` word off. */
         current = pollQueue(instructions)->token;
       }
@@ -312,14 +372,14 @@ void controlIf(Stack* stack, Queue* instructions, int *mem, Token* startToken) {
         hasEnd = 1;
         break;
       }
-      parseQueue(stack, instructions, mem, queueElem);
+      parseQueue(stack, instructions, mem, definitions, queueElem);
     }
     assertWithToken(hasEnd, "`end` not found after `if` or `elseif`", startToken);
   }
 }
 
 /* Called when parseQueue() encounters a OP_WHILE. */
-void controlWhile(Stack* stack, Queue* instructions, int *mem, QueueElem* rootElem) {
+void controlWhile(Stack* stack, Queue* instructions, int *mem, Definitions* definitions, QueueElem* rootElem) {
   Queue *evalInstructions = newQueue();
   Queue *loopInstructions = newQueue();
   QueueElem *elem;
@@ -356,7 +416,7 @@ void controlWhile(Stack* stack, Queue* instructions, int *mem, QueueElem* rootEl
     /* Evaluate evalInstuctions. */
     Queue *evalQueue = copyQueue(evalInstructions);
     while (!isEmptyQueue(evalQueue)) {
-      parseQueue(stack, evalQueue, mem, pollQueue(evalQueue));
+      parseQueue(stack, evalQueue, mem, definitions, pollQueue(evalQueue));
     }
     truth = popStack(stack);
     if (truth == 0) {
@@ -365,14 +425,14 @@ void controlWhile(Stack* stack, Queue* instructions, int *mem, QueueElem* rootEl
 
     Queue *loopQueue = copyQueue(loopInstructions);
     while (!isEmptyQueue(loopQueue)) {
-      parseQueue(stack, loopQueue, mem, pollQueue(loopQueue));
+      parseQueue(stack, loopQueue, mem, definitions, pollQueue(loopQueue));
     }
   }
 }
 
 /* Parses a token. */
-void parseQueue(Stack* stack, Queue* instructions, int *mem, QueueElem* queueElem) {
-  assert(OPS_COUNT == 31, "Update control flow in parse().");
+void parseQueue(Stack* stack, Queue* instructions, int *mem, Definitions* definitions, QueueElem* queueElem) {
+  assert(OPS_COUNT == 33, "Update control flow in parse().");
   Token *token = queueElem->token;
   if (token->OP_TYPE == OP_INT) {
     pushStack(stack, token->value);
@@ -485,15 +545,37 @@ void parseQueue(Stack* stack, Queue* instructions, int *mem, QueueElem* queueEle
     }
     assertWithToken(0, "`.\"` without `end`.", token);
   } else if (token->OP_TYPE == OP_IF) {
-    controlIf(stack, instructions, mem, token);
+    controlIf(stack, instructions, mem, definitions, token);
   } else if (token->OP_TYPE == OP_ELSEIF) {
     assertWithToken(0, "`elseif` without if", token);
   } else if (token->OP_TYPE == OP_WHILE) {
-    controlWhile(stack, instructions, mem, queueElem);
+    controlWhile(stack, instructions, mem, definitions, queueElem);
   } else if (token->OP_TYPE == OP_THEN) {
     assertWithToken(0, "`then` word without starting", token);
   } else if (token->OP_TYPE == OP_END) {
     assertWithToken(0, "`end` word without starting.", token);
+  } else if (token->OP_TYPE == OP_DEFWORD) {
+    Token *wordNameToken = pollQueue(instructions)->token;
+    assertWithToken(wordNameToken->OP_TYPE == OP_UNKNOWN, "Word must not be defined before.", wordNameToken);
+    char *wordName = wordNameToken->word;
+    int hasEndDef = 0;
+    Queue *block = newQueue();
+    Token *defToken;
+    int type;
+    while (!isEmptyQueue(instructions)) {
+      defToken = pollQueue(instructions)->token;
+      type = defToken->OP_TYPE;
+      assertWithToken(type != OP_DEFWORD, "No nested `defword`", defToken);
+      if (type == OP_ENDDEF) {
+        hasEndDef = 1;
+        break;
+      }
+      pushQueue(block, defToken);
+    }
+    assertWithToken(hasEndDef, "`enddef` not found after `defword`", token);
+    addDefinition(definitions, wordName, block);
+  } else if (token->OP_TYPE == OP_ENDDEF) {
+    assertWithToken(0, "`enddef` without `defword`", token);
   } else if (token->OP_TYPE == OP_MEM) {
     Token *indexToken = pollQueue(instructions)->token;
     int index = indexToken->value;
@@ -507,9 +589,15 @@ void parseQueue(Stack* stack, Queue* instructions, int *mem, QueueElem* queueEle
     assertWithToken(index < MEM_SIZE, "Memory index is too large.", indexToken);
     pushStack(stack, mem[index]);
   } else if (token->OP_TYPE == OP_UNKNOWN) {
-    char *message;
-    asprintf(&message, "Word `%s` not implemented yet.", token->word);
-    assertWithToken(0, message, token);
+    DefWord *definition = findDefinition(definitions, token->word);
+    if (definition == NULL) {
+      char *message;
+      asprintf(&message, "Word `%s` not implemented yet.", token->word);
+      assertWithToken(0, message, token);
+    }
+    /* Add block to instructions. */
+    Queue *block = definition->block;
+    concatQueues(block, instructions);
   } else {
     assertWithToken(0, "Unreachable code.", token);
   }
@@ -522,7 +610,7 @@ Token* makeToken(int row, int col, char *word) {
   token->col = col;
   token->value = 0;
   strncpy(token->word, word, MAX_WORD_SIZE);
-  assert(OPS_COUNT == 31, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 33, "Update control flow in makeToken().");
   // control flow to decide type of operation
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;
@@ -581,6 +669,10 @@ Token* makeToken(int row, int col, char *word) {
     token->OP_TYPE = OP_THEN;
   } else if (strcmp(word, "end") == 0) {
     token->OP_TYPE = OP_END;
+  } else if (strcmp(word, "defword") == 0) {
+    token->OP_TYPE = OP_DEFWORD;
+  } else if (strcmp(word, "enddef") == 0) {
+    token->OP_TYPE = OP_ENDDEF;
   } else if (strcmp(word, "mem") == 0) {
     token->OP_TYPE = OP_MEM;
   } else if (strcmp(word, "memr") == 0) {
@@ -604,8 +696,9 @@ int main(int argc, char* argv[]) {
     assert(source == NULL, message);
   }
 
-  Queue* instructions = newQueue();
-  Stack* stack = newStack();
+  Queue *instructions = newQueue();
+  Stack *stack = newStack();
+  Definitions *definitions = newDefinitions();
   int isMemUsed = 0;
   /* `mem` is initialised only if actually used in the program. */
   int mem[MEM_SIZE];
@@ -649,15 +742,14 @@ int main(int argc, char* argv[]) {
     }
     row++;
   }
+  fclose(source);
 
   if (isMemUsed) {
     memset(mem, 0, sizeof(mem));
   }
 
   while (!isEmptyQueue(instructions)) {
-    parseQueue(stack, instructions, mem, pollQueue(instructions));
+    parseQueue(stack, instructions, mem, definitions, pollQueue(instructions));
   }
-
-  fclose(source);
   return 0;
 }

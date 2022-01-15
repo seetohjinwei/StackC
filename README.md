@@ -139,8 +139,8 @@ The following words will print into standard output. Will have an error if the o
 
 | Word | Description |
 | --- | --- |
-| `,` | peeks at the top of the stack, without removing it, printing the literal integer. |
-| `.` | pops from the top of the stack, removing it, printing the integer literal. |
+| `,` | peeks at the top of the stack, without removing it, printing the integer. |
+| `.` | pops from the top of the stack, removing it, printing the integer. |
 | `emit` | similar to `.` but prints the ASCII equivalent instead. |
 | `.s` | prints the size of the current stack. |
 | `cr` | prints a new line |
@@ -177,7 +177,7 @@ Do note that there are required space characters after and before `."` and `end`
 
 No many how many spaces or newlines there are between each word in the string, it is ignored and replaced with a single space character, *and* there is a extra space and newline character after every string. This is because I parse the file completely before interpreting it and this results in a loss of information about the original spacing between the words. But doing it this way allows me to check for potential errors before interpreting the file.
 
-Also, if you are trying to print `end`, I am afraid that there is no way to escape the `end` keyword. You can probably just print `end.` or something I don't know!
+Also, if you are trying to print `end`, I am afraid that there is no way to escape the `end` keyword. You can probably just print `end.` or something, I don't know.
 
 Also also, strings are limited to 1000 characters.
 
@@ -298,6 +298,54 @@ If you think this violates the idea of a stack-based language too much, then fee
 | `mem A` | pops the first element off the stack and saves it to index `A` |
 | `memr A` | pushes the value of index `A` onto the stack |
 
+### Defining Words
+
+It is possible to define custom words, which is useful for repeated operations.
+
+`defword <wordname> <word body> enddef`
+
+After the definition of the custom word, every other occurrence of a word is effectively replaced by the word body.
+
+Ideally, one adds in a "function signature" as a comment to denote how many elements the word will pop and push.
+
+The following program computes the nth fibonaci number (this is what I came up with but there might be a better way). It is kinda tricky to have to juggle with 3 values in the stack.
+
+```
+-- duplicates top 2 elements
+defword dup2 -- int, int -> int, int, int, int
+  over over
+enddef
+
+-- nth fibonacci number
+defword fib -- int -> int
+  1 -
+  0 1 rot
+  while dup 0 > then
+    rot rot
+    dup2 + rot drop
+    rot 1 -
+  end
+  drop drop
+enddef
+
+29 fib .                -- prints 317811
+```
+
+is equivalent to
+
+```
+def fib(n):
+  n -= 1
+  a = 0
+  b = 1
+  while n > 0:
+    a, b = b, a + b
+    n -= 1
+  print(a)
+
+fib(29)                 # prints 317811
+```
+
 ## Tests
 
 Some tests are available in `tests` folder, each `.fth` file is matched with a `.o` file which is the code and the expected result (stdout) respectively. These tests are run automatically by `test.py`, which must be executed in the root directory.
@@ -317,13 +365,14 @@ Some tests are available in `tests` folder, each `.fth` file is matched with a `
 
 ## TODO
 
-- change makeToken to use an array instead of a bunch of if/else
-- `forth.c` debug flag to print stack after each operation
 - `forth.c` flag to support running a string straight from command line
-- dup2 duplicates top two
+- change makeToken to use an array instead of a bunch of if/else
+- allow pushing of negative numbers
+- `forth.c` debug flag to print stack after each operation
 - Come up with a name
 - Power (exponent)
 - Bitwise operations
 - Rule 110 program
 - declaration of constants and small arrays instead of `mem`?
 - Allow user-defined words
+- small standard library?
