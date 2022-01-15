@@ -8,11 +8,12 @@ This interpreter is written in C. Testing framework is written in Python.
 
 ## Quick Setup
 
-Minimally you only need to download `forth.c` and compile it with a C compiler. Then, you can run the executable with your program name as the argument.
+Minimally you only need to download `forth.c` and compile it with a C compiler. Then, you can run the executable with your program name as the argument. Or alternatively, you can just run a short script with a `-s` flag in front as shown. This short script would be identical to an actutal `.fth` file except it does not accept newline as spacing.
 
 ```
 gcc forth.c -o forth
 ./forth your_program
+./forth -s "if 0 then 45 emit elseif 1 then 43 emit end" -- prints `+` to stdout
 ```
 
 ## Documentation

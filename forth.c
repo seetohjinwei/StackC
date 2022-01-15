@@ -685,71 +685,96 @@ Token* makeToken(int row, int col, char *word) {
 
 /* Main Function */
 int main(int argc, char* argv[]) {
-  assert(argc > 1, "No file given.\nPlease use `./forth filename`");
-  char* filename = argv[1];
-  FILE *source;
-  source = fopen(filename, "r");
-
-  if (source == NULL) {
-    char *message;
-    asprintf(&message, "File %s not found", filename);
-    assert(source == NULL, message);
-  }
-
+  assert(argc > 1, "Not enough arguments.\nPlease use `./forth filename` or `./forth -s \"1 .\"`");
+  int flagShort = strcmp(argv[1], "-s") == 0;
   Queue *instructions = newQueue();
   Stack *stack = newStack();
   Definitions *definitions = newDefinitions();
   int isMemUsed = 0;
   /* `mem` is initialised only if actually used in the program. */
   int mem[MEM_SIZE];
-
   /* word size is limited to MAX_WORD_SIZE */
   char word[MAX_WORD_SIZE];
   memset(word, 0, sizeof(word));
 
-  /* Parsing input line by line. */
-  char *line = NULL;
-  /* Signed integer, includes new line character. */
-  int row = 0;
-  ssize_t lengthOfLine;
-  size_t len = 0;
-  while ((lengthOfLine = getline(&line, &len, source)) != -1) {
-    int wordIndex = 0;
-    memset(word, 0, sizeof(word));
-    int lineIndex;
-    for (lineIndex = 0; lineIndex < lengthOfLine; lineIndex++) {
-      char c = line[lineIndex];
-      /* Catch comments and ignore the rest (by exiting for loop). */
-      if (c == '-' && lineIndex < lengthOfLine - 1 && line[lineIndex+1] == '-') {
-        break;
-      } else if (c == ' ' || c == '\n') {
-        if (wordIndex == 0) {
-          /* Skipping multiple spaces. */
+  if (flagShort) {
+    assert(argc > 2, "Not enough arguments. Please provide a short script to run.");
+    int current = 1;
+    size_t argvI = 0;
+    size_t wordI = 0;
+    while (current != 0) {
+      current = argv[2][argvI++];
+      if (current == 0 || current == 32) {
+        /* 0 is the EOF character, 32 is space character. */
+        if (wordI == 0) {
           continue;
         }
-        Token *token = makeToken(row, lineIndex - wordIndex, word);
-        /* Only initialises `mem` if actually used. */
+        Token *token = makeToken(0, argvI - wordI, word);
         if (token->OP_TYPE == OP_MEM || token->OP_TYPE == OP_MEMR) {
           isMemUsed = 1;
         }
         pushQueue(instructions, token);
-        wordIndex = 0;
+        wordI = 0;
         memset(word, 0, sizeof(word));
       } else {
-        assert(wordIndex < MAX_WORD_SIZE, "Word is too long!");
-        word[wordIndex++] = c;
+        word[wordI++] = current;
       }
     }
-    row++;
+  } else {
+    char* filename = argv[1];
+    FILE *source;
+    source = fopen(filename, "r");
+
+    if (source == NULL) {
+      char *message;
+      asprintf(&message, "File %s not found", filename);
+      assert(source == NULL, message);
+    }
+
+    /* Parsing input line by line. */
+    char *line = NULL;
+    /* Signed integer, includes new line character. */
+    int row = 0;
+    ssize_t lengthOfLine;
+    size_t len = 0;
+    while ((lengthOfLine = getline(&line, &len, source)) != -1) {
+      int wordIndex = 0;
+      memset(word, 0, sizeof(word));
+      int lineIndex;
+      for (lineIndex = 0; lineIndex < lengthOfLine; lineIndex++) {
+        char c = line[lineIndex];
+        /* Catch comments and ignore the rest (by exiting for loop). */
+        if (c == '-' && lineIndex < lengthOfLine - 1 && line[lineIndex+1] == '-') {
+          break;
+        } else if (c == ' ' || c == '\n') {
+          if (wordIndex == 0) {
+            /* Skipping multiple spaces. */
+            continue;
+          }
+          Token *token = makeToken(row, lineIndex - wordIndex, word);
+          /* Only initialises `mem` if actually used. */
+          if (token->OP_TYPE == OP_MEM || token->OP_TYPE == OP_MEMR) {
+            isMemUsed = 1;
+          }
+          pushQueue(instructions, token);
+          wordIndex = 0;
+          memset(word, 0, sizeof(word));
+        } else {
+          assert(wordIndex < MAX_WORD_SIZE, "Word is too long!");
+          word[wordIndex++] = c;
+        }
+      }
+      row++;
+    }
+    fclose(source);
   }
-  fclose(source);
 
   if (isMemUsed) {
     memset(mem, 0, sizeof(mem));
   }
-
   while (!isEmptyQueue(instructions)) {
     parseQueue(stack, instructions, mem, definitions, pollQueue(instructions));
   }
+
   return 0;
 }
