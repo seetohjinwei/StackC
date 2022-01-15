@@ -167,6 +167,17 @@ QueueElem* prevQueueElem(QueueElem* currentElem) {
   return prevElem;
 }
 
+/* Copy a queue. */
+Queue* copyQueue(Queue* queue) {
+  Queue *result = newQueue();
+  QueueElem *elem = queue->head;
+  while (elem != NULL) {
+    pushQueue(result, elem->token);
+    elem = elem->next;
+  }
+  return result;
+}
+
 /* Initialise a new stack. */
 Stack* newStack(void) {
   Stack *stack;
@@ -309,29 +320,52 @@ void controlIf(Stack* stack, Queue* instructions, int *mem, Token* startToken) {
 
 /* Called when parseQueue() encounters a OP_WHILE. */
 void controlWhile(Stack* stack, Queue* instructions, int *mem, QueueElem* rootElem) {
-  /* TODO: Break abstraction a little and use -> next to traverse */
-  int hasEnd = 0;
+  Queue *evalInstructions = newQueue();
+  Queue *loopInstructions = newQueue();
+  QueueElem *elem;
+  Token *token;
+  int type;
+  /* Fill up evalInstructions. */
   while (!isEmptyQueue(instructions)) {
-    QueueElem* elem = peekQueue(instructions);
-    int type = elem->token->OP_TYPE;
-    if (type == OP_WHILE) {
-      /* Nested while loop. */
-      parseQueue(stack, instructions, mem, pollQueue(instructions));
-    }
-    pollQueue(instructions);
-    if (type == OP_END) {
-      hasEnd = 1;
+    elem = pollQueue(instructions);
+    token = elem->token;
+    type = token->OP_TYPE;
+    if (type == OP_THEN) {
       break;
     }
+    pushQueue(evalInstructions, token);
   }
-  assertWithToken(hasEnd, "`end` not found after `while`.", rootElem->token);
-  QueueElem* current = rootElem->next;
-  while (current->token->OP_TYPE != OP_END) {
-    int truth = popStack(stack);
+  /* Fill up loopInstructions. */
+  int ends = 1;
+  while (ends > 0 && !isEmptyQueue(instructions)) {
+    elem = pollQueue(instructions);
+    token = elem->token;
+    type = token->OP_TYPE;
+    if (type == OP_IF || type == OP_WHILE || type == OP_STR) {
+      ends++;
+    } else if (type == OP_END) {
+      ends--;
+    }
+    if (ends == 0) {
+      break;
+    }
+    pushQueue(loopInstructions, token);
+  }
+  int truth;
+  while (1) {
+    /* Evaluate evalInstuctions. */
+    Queue *evalQueue = copyQueue(evalInstructions);
+    while (!isEmptyQueue(evalQueue)) {
+      parseQueue(stack, evalQueue, mem, pollQueue(evalQueue));
+    }
+    truth = popStack(stack);
     if (truth == 0) {
-      /* Exit while loop. */
-      jumpToEnd(stack, instructions, mem);
-      return;
+      break;
+    }
+
+    Queue *loopQueue = copyQueue(loopInstructions);
+    while (!isEmptyQueue(loopQueue)) {
+      parseQueue(stack, loopQueue, mem, pollQueue(loopQueue));
     }
   }
 }

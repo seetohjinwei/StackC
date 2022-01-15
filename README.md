@@ -15,6 +15,12 @@ gcc forth.c -o forth
 ./forth your_program
 ```
 
+## Documentation
+
+Included below are brief explanations and examples (and equivalent programs in python). There are more examples in `tests` folder.
+
+Feel free to check out the source code for more details.
+
 ## Words
 
 Words must be separated with either a ` ` (space character) or `\n` (new line). You can have multiple spaces or new line characters (even mixed around) successively, they are treated as a single separator.
@@ -42,6 +48,14 @@ Comments are declared by `--`, every character after `--` is ignored by the inte
 -- . . . . .
 -- Does not cause stack underflow because it is not ran!
 65 emit -- prints an `A` character
+```
+
+```python
+# This is a comment.
+# Anything after `#` is ignored.
+# print("NOT PRINTED!")
+# Does not cause stack underflow because it is not ran!
+print(chr(65)) # prints an `A` character
 ```
 
 ### Integer
@@ -78,6 +92,14 @@ The follow operations pop 2 elements off the stack and push the result back on i
 50 7 % . -- prints 1
 ```
 
+```python
+print(1 + 2)     # prints 3
+print(9 - 3)     # prints 6
+print(5 * 6)     # prints 30
+print(50 // 7)   # prints 7
+print(50 % 7)    # prints 1
+```
+
 ### Comparison Operations
 
 The following operations pop 2 elements off the stack and push 0 (if false) and 1 (if true) back on it.
@@ -101,6 +123,16 @@ The following operations pop 2 elements off the stack and push 0 (if false) and 
 5 5 < .    -- prints 0 (false)
 ```
 
+```python
+print(1 == 1)    # prints True
+print(0 == 1)    # prints False
+print(19 >= 19)  # prints True
+print(20 >= 19)  # prints True
+print(19 <= 5)   # prints False
+print(2 > 1)     # prints True
+print(5 < 5)     # prints False
+```
+
 ### Printing to Standard Output
 
 The following words will print into standard output. Will have an error if the operation causes stack underflow.
@@ -122,6 +154,17 @@ The following words will print into standard output. Will have an error if the o
 .    -- prints 1
 emit -- prints `A`
 .s   -- prints 0
+```
+
+```python
+stack = [65, 1, 2, 3]
+print(stack[-1])           # prints 3
+print(len(stack))          # prints 4
+print(stack.pop())         # prints 3
+print(stack.pop())         # prints 2
+print(stack.pop())         # prints 1
+print(chr(stack.pop()))    # prints `A`
+print(len(stack))          # prints 0
 ```
 
 ### Strings
@@ -169,11 +212,11 @@ This is a "multi-line" string
 
 ### Control Flow
 
-#### `if` and `elseif` words
+#### If Statement
 
 The words between `if` and `then` are always evaluated. When `then` is encountered, the first element is popped off the stack and evaluated as a boolean. If true, the block between `then` and the next `elseif` or `end` is evaluated. After which, the evaluator will jump to the `end` word. If false, the evaluator will jump to the next `elseif` block to evaluate it.
 
-If you want to simulate a regular `else` as in other languages, just use a `elseif 1 then` for it to always evaluate to true.
+If you want to simulate a regular `else`, as in other languages, just use a `elseif 1 then` for it to always evaluate to true.
 
 Nested if/else are also supported!
 
@@ -192,7 +235,6 @@ end
 ```
 
 ```python
-# equivalent program in python
 if False:
   print(12)
 else:
@@ -206,24 +248,41 @@ else:                  # not even valid python to have 2 else blocks
 
 #### While Loop
 
-At the start of each loop, the while loop will pop an integer off the stack, if it is true, the block between `while` and `end` will be evaluated, else, the loop will end.
+The words between `while` and `then` are evaluated at the start of each loop. After which, an integer is popped off the stack and evaluated as a boolean. If this is false, the loop ends. If this is true, the words between `then` and `end` are evaluated. And this will repeat indefinitely (remember to update your control variable).
 
-The following program is a simple while loop that prints from 10 to 1.
+Nested loops are supported, go crazy (but maybe not *too* crazy)!
+
+The following program is FizzBuzz from 1 to 100.
 
 ```
-10
-while dup 0 > then
-  ,
-  1 -
+1
+while dup 100 <= then
+  if dup 15 % 0 = then
+    ." FizzBuzz end
+  elseif dup 3 % 0 = then
+    ." Fizz end
+  elseif dup 5 % 0 = then
+    ." Buzz end
+  elseif 1 then
+    ,
+  end
+  1 +
 end
+drop
 ```
 
 ```python
-# equivalent program in python
-i = 10
-while i > 0:
-  print(i)
-  i -= 1
+x = 1
+while x <= 100:
+  if x % 15 == 0:
+    print("FizzBuzz")
+  elif x % 3 == 0:
+    print("Fizz")
+  elif x % 5 == 0:
+    print("Buzz")
+  else:
+    print(x)
+  x += 1
 ```
 
 ### Memory
@@ -258,11 +317,13 @@ Some tests are available in `tests` folder, each `.fth` file is matched with a `
 
 ## TODO
 
-- TODO: while
+- change makeToken to use an array instead of a bunch of if/else
+- `forth.c` debug flag to print stack after each operation
+- `forth.c` flag to support running a string straight from command line
 - dup2 duplicates top two
 - Come up with a name
 - Power (exponent)
 - Bitwise operations
-- `while` and `for` (`do` loop) loop
 - Rule 110 program
+- declaration of constants and small arrays instead of `mem`?
 - Allow user-defined words
