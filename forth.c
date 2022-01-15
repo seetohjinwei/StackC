@@ -33,7 +33,8 @@ typedef enum OPS {
   OP_STR,
   OP_IF,
   OP_ELSEIF,
-  OP_ELSE,
+  OP_THEN,
+  OP_WHILE,
   OP_END,
   OP_MEM,
   OP_MEMR,
@@ -224,19 +225,28 @@ int isNumber(char* word) {
 }
 
 /* Declaration here to use it in controlIf. */
-void parseQueue(Stack* stack, Queue* instructions, int *mem);
+void parseQueue(Stack* stack, Queue* instructions, int *mem, QueueElem* queueElem);
 
 /* Jumps to one of the specified OP_TYPEs. Used in control flow. */
 void jumpTo(Stack* stack, Queue* instructions, int *mem, int *jumpPoints, size_t jumpPointsSize) {
   Token *startToken = peekQueue(instructions)->token;
   while (!isEmptyQueue(instructions)) {
     Token *token = peekQueue(instructions)->token;
+    int type = token->OP_TYPE;
     int i;
-    if (token->OP_TYPE == OP_IF) {
-      parseQueue(stack, instructions, mem);
+    if (type == OP_IF || type == OP_WHILE) {
+      parseQueue(stack, instructions, mem, pollQueue(instructions));
+      pollQueue(instructions);
+    } else if (type == OP_STR) {
+      /* Remove ." to end from instructions. */
+      Token *stringToken = token;
+      while (!isEmptyQueue(instructions) && stringToken->OP_TYPE != OP_END) {
+        stringToken = pollQueue(instructions)->token;
+      }
+      continue;
     }
     for (i = 0; i < jumpPointsSize; i++) {
-      if (token->OP_TYPE == jumpPoints[i]) {
+      if (type == jumpPoints[i]) {
         return;
       }
     }
@@ -252,69 +262,83 @@ void jumpToEnd(Stack* stack, Queue* instructions, int *mem) {
 }
 
 /* Called when parseQueue() encounters a OP_IF. */
-void controlIf(Stack* stack, Queue* instructions, int *mem) {
-  /* OP_IF token is already polled, so don't double poll. */
-  int isIF = 1;
+void controlIf(Stack* stack, Queue* instructions, int *mem, Token* startToken) {
+  int startType = startToken->OP_TYPE;
+  if (startType == OP_END) {
+    return;
+  }
+  assertWithToken(startType == OP_IF || startType == OP_ELSEIF, "controlIf must be called with `if` or `elseif` token", startToken);
+  /* Evaluate until `then` keyword */
+  int hasThen = 0;
   while (!isEmptyQueue(instructions)) {
-    Token* instructionToken;
-    if (isIF) {
-      instructionToken = prevQueueElem(peekQueue(instructions))->token;
-      isIF = 0;
-    } else {
-      instructionToken = pollQueue(instructions)->token;
+    QueueElem *queueElem = pollQueue(instructions);
+    Token *current = queueElem->token;
+    if (current->OP_TYPE == OP_THEN) {
+      hasThen = 1;
+      break;
     }
-    int type = instructionToken->OP_TYPE;
+    parseQueue(stack, instructions, mem, queueElem);
+  }
+  assertWithToken(hasThen, "`then` not found after `if` or `elseif`", startToken);
+  int truth = popStack(stack);
+  if (truth == 0) {
+    /* Jump to next block for evaluation. */
+    int jumpPoints[2] = {OP_ELSEIF, OP_END};
+    jumpTo(stack, instructions, mem, jumpPoints, 2);
+    Token* next = pollQueue(instructions)->token;
+    controlIf(stack, instructions, mem, next);
+  } else {
+    int hasEnd = 0;
+    while (!isEmptyQueue(instructions)) {
+      QueueElem *queueElem = pollQueue(instructions);
+      Token *current = queueElem->token;
+      if (current->OP_TYPE == OP_ELSEIF) {
+        jumpToEnd(stack, instructions, mem);
+        /* Poll `end` word off. */
+        current = pollQueue(instructions)->token;
+      }
+      if (current->OP_TYPE == OP_END) {
+        hasEnd = 1;
+        break;
+      }
+      parseQueue(stack, instructions, mem, queueElem);
+    }
+    assertWithToken(hasEnd, "`end` not found after `if` or `elseif`", startToken);
+  }
+}
+
+/* Called when parseQueue() encounters a OP_WHILE. */
+void controlWhile(Stack* stack, Queue* instructions, int *mem, QueueElem* rootElem) {
+  /* TODO: Break abstraction a little and use -> next to traverse */
+  int hasEnd = 0;
+  while (!isEmptyQueue(instructions)) {
+    QueueElem* elem = peekQueue(instructions);
+    int type = elem->token->OP_TYPE;
+    if (type == OP_WHILE) {
+      /* Nested while loop. */
+      parseQueue(stack, instructions, mem, pollQueue(instructions));
+    }
+    pollQueue(instructions);
     if (type == OP_END) {
+      hasEnd = 1;
+      break;
+    }
+  }
+  assertWithToken(hasEnd, "`end` not found after `while`.", rootElem->token);
+  QueueElem* current = rootElem->next;
+  while (current->token->OP_TYPE != OP_END) {
+    int truth = popStack(stack);
+    if (truth == 0) {
+      /* Exit while loop. */
+      jumpToEnd(stack, instructions, mem);
       return;
-    } else if (type == OP_ELSE) {
-      while(!isEmptyQueue(instructions)) {
-        Token* current = peekQueue(instructions)->token;
-        if (current->OP_TYPE == OP_ELSE) {
-          assertWithToken(0, "`else` found after `else`", instructionToken);
-        } else if (current->OP_TYPE == OP_ELSEIF) {
-          assertWithToken(0, "`elseif` found after `else`", instructionToken);
-        } else if (current->OP_TYPE == OP_END) {
-          /* consume OP_END */
-          pollQueue(instructions);
-          return;
-        }
-        parseQueue(stack, instructions, mem);
-      }
-      assertWithToken(0, "`end` not found", instructionToken);
-    } else if (type == OP_IF || type == OP_ELSEIF) {
-      assertWithToken(!isEmptyStack(stack), "No boolean before `if` or `elseif` token.", instructionToken);
-      int truth = popStack(stack);
-      if (truth == 0) {
-        int jumpPoints[3] = {OP_ELSE, OP_ELSEIF, OP_END};
-        jumpTo(stack, instructions, mem, jumpPoints, 3);
-      } else {
-        Token* next;
-        while(!isEmptyQueue(instructions)) {
-          next = peekQueue(instructions)->token;
-          if (next->OP_TYPE == OP_ELSE) {
-            jumpToEnd(stack, instructions, mem);
-            break;
-          } else if (next->OP_TYPE == OP_ELSEIF) {
-            jumpToEnd(stack, instructions, mem);
-            break;
-          } else if (next->OP_TYPE == OP_END) {
-            break;
-          }
-          parseQueue(stack, instructions, mem);
-        }
-        next = peekQueue(instructions)->token;
-        assertWithToken(next->OP_TYPE == OP_END, "`end` not found after `if`", next);
-      }
-    } else {
-      assertWithToken(0, "Not OP_IF, OP_ELSE, OP_ELSEIF, OP_END", instructionToken);
     }
   }
 }
 
 /* Parses a token. */
-void parseQueue(Stack* stack, Queue* instructions, int *mem) {
-  assert(OPS_COUNT == 30, "Update control flow in parse().");
-  QueueElem *queueElem = pollQueue(instructions);
+void parseQueue(Stack* stack, Queue* instructions, int *mem, QueueElem* queueElem) {
+  assert(OPS_COUNT == 31, "Update control flow in parse().");
   Token *token = queueElem->token;
   if (token->OP_TYPE == OP_INT) {
     pushStack(stack, token->value);
@@ -427,11 +451,13 @@ void parseQueue(Stack* stack, Queue* instructions, int *mem) {
     }
     assertWithToken(0, "`.\"` without `end`.", token);
   } else if (token->OP_TYPE == OP_IF) {
-    controlIf(stack, instructions, mem);
-  } else if (token->OP_TYPE == OP_ELSE) {
-    assertWithToken(0, "`else` word without if", token);
+    controlIf(stack, instructions, mem, token);
   } else if (token->OP_TYPE == OP_ELSEIF) {
     assertWithToken(0, "`elseif` without if", token);
+  } else if (token->OP_TYPE == OP_WHILE) {
+    controlWhile(stack, instructions, mem, queueElem);
+  } else if (token->OP_TYPE == OP_THEN) {
+    assertWithToken(0, "`then` word without starting", token);
   } else if (token->OP_TYPE == OP_END) {
     assertWithToken(0, "`end` word without starting.", token);
   } else if (token->OP_TYPE == OP_MEM) {
@@ -462,7 +488,7 @@ Token* makeToken(int row, int col, char *word) {
   token->col = col;
   token->value = 0;
   strncpy(token->word, word, MAX_WORD_SIZE);
-  assert(OPS_COUNT == 30, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 31, "Update control flow in makeToken().");
   // control flow to decide type of operation
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;
@@ -513,10 +539,12 @@ Token* makeToken(int row, int col, char *word) {
     token->OP_TYPE = OP_STR;
   } else if (strcmp(word, "if") == 0) {
     token->OP_TYPE = OP_IF;
-  } else if (strcmp(word, "else") == 0) {
-    token->OP_TYPE = OP_ELSE;
   } else if (strcmp(word, "elseif") == 0) {
     token->OP_TYPE = OP_ELSEIF;
+  } else if (strcmp(word, "while") == 0) {
+    token->OP_TYPE = OP_WHILE;
+  } else if (strcmp(word, "then") == 0) {
+    token->OP_TYPE = OP_THEN;
   } else if (strcmp(word, "end") == 0) {
     token->OP_TYPE = OP_END;
   } else if (strcmp(word, "mem") == 0) {
@@ -558,7 +586,7 @@ int main(int argc, char* argv[]) {
   int row = 0;
   ssize_t lengthOfLine;
   size_t len = 0;
-  while((lengthOfLine = getline(&line, &len, source)) != -1) {
+  while ((lengthOfLine = getline(&line, &len, source)) != -1) {
     int wordIndex = 0;
     memset(word, 0, sizeof(word));
     int lineIndex;
@@ -592,8 +620,8 @@ int main(int argc, char* argv[]) {
     memset(mem, 0, sizeof(mem));
   }
 
-  while(!isEmptyQueue(instructions)) {
-    parseQueue(stack, instructions, mem);
+  while (!isEmptyQueue(instructions)) {
+    parseQueue(stack, instructions, mem, pollQueue(instructions));
   }
 
   fclose(source);

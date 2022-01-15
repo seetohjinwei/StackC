@@ -157,50 +157,6 @@ This is a single line string!
 This is a "multi-line" string 
 ```
 
-### Control Flow
-
-#### `if` and `elseif` words
-
-`if` will pop the first element off the stack and treat it as a boolean. The following example will hopefully explain it better than I can.
-
-Nested if/else are also supported!
-
-```
--- in this language
-1 0      -- pushing `1` and `0` onto the stack       (stack: [1, 0])
-if       -- 0 is popped off the stack and is false   (stack: [1])
-  12 .   -- skipped
-elseif   -- 1 is popped off the stack and is true    (stack: [])
-  2 1 -  --                                          (stack: [1])
-  if     -- 1 is popped and is true                  (stack: [])
-    23 . -- 23 will be printed
-  else
-    34 .
-  end
-else     -- elseif will skip to end
-  45 .   -- not evaluated
-end
-```
-
-```python
-# equivalent program in python
-stack = []               # to simulate stack
-stack.append(1)
-stack.append(0)
-
-if stack.pop():
-  print(12)
-elif stack.pop():
-  stack.append(2 - 1)
-  if stack.pop():
-    print(23)             # 23 is printed
-  else:
-    print(34)
-else:
-  print(45)
-```
-
-
 ### Stack Manipulation
 
 | Word | Description |
@@ -210,6 +166,65 @@ else:
 | `swap` | swaps the first two elements |
 | `over` | duplicates the second element and pushes it to the top |
 | `rot` | rotates the first 3 elements, `1 2 3 rot . . .` -- prints `1 3 2` |
+
+### Control Flow
+
+#### `if` and `elseif` words
+
+The words between `if` and `then` are always evaluated. When `then` is encountered, the first element is popped off the stack and evaluated as a boolean. If true, the block between `then` and the next `elseif` or `end` is evaluated. After which, the evaluator will jump to the `end` word. If false, the evaluator will jump to the next `elseif` block to evaluate it.
+
+If you want to simulate a regular `else` as in other languages, just use a `elseif 1 then` for it to always evaluate to true.
+
+Nested if/else are also supported!
+
+```
+if 0 then          -- evaluates to false
+  12 .
+elseif 1 then      -- evaluates to true
+  if 2 1 - then    -- evaluates to 1 which is true
+    23 .           -- 23 is printed
+  elseif 1 then    -- skipped to jump ahead to the `end` block
+    34 .
+  end
+elseif 1 then
+  45 .             -- never evaluated as it is equivalent to placing 2 `else` after one another.
+end
+```
+
+```python
+# equivalent program in python
+if False:
+  print(12)
+else:
+  if bool(2 - 1):
+    print(23)          # 23 is printed
+  else:
+    print(34)
+else:                  # not even valid python to have 2 else blocks
+  print(45)            # never evaluated
+```
+
+#### While Loop
+
+At the start of each loop, the while loop will pop an integer off the stack, if it is true, the block between `while` and `end` will be evaluated, else, the loop will end.
+
+The following program is a simple while loop that prints from 10 to 1.
+
+```
+10
+while dup 0 > then
+  ,
+  1 -
+end
+```
+
+```python
+# equivalent program in python
+i = 10
+while i > 0:
+  print(i)
+  i -= 1
+```
 
 ### Memory
 
@@ -243,7 +258,11 @@ Some tests are available in `tests` folder, each `.fth` file is matched with a `
 
 ## TODO
 
+- TODO: while
+- dup2 duplicates top two
+- Come up with a name
 - Power (exponent)
 - Bitwise operations
 - `while` and `for` (`do` loop) loop
+- Rule 110 program
 - Allow user-defined words

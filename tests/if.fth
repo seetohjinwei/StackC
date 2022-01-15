@@ -1,102 +1,62 @@
 -- 43 is +, 45 is -
--- not nested
 
-0 if
+if 0 then
   45 emit
 end
 
-1 if
+if 1 then
   43 emit
 end
 
-0 if
+if 0 then
   45 emit
-else
+elseif 1 then
   43 emit
 end
 
-0 1 if
+if 1 then
   43 emit
-elseif
+elseif 1 then
   45 emit
-else
+elseif 0 then
   45 emit
 end
 
-1 0 if
-  45 emit
-elseif
-  43 emit
-else
-  45 emit
+0
+if dup 5 > then
+  . ." is more than 5 end
+elseif 1 then
+  . ." is less than 5 end
 end
 
-0 0 if
-  45 emit
-elseif
-  45 emit
-else
-  43 emit
+10
+if dup 5 > then
+  . ." is more than 5 end
+elseif 1 then
+  . ." is less than 5 end
 end
 
--- nested tests
+-- nested loops
 
-1 0      -- pushing `1` and `0` onto the stack       (stack: [1, 0])
-if       -- 0 is popped off the stack and is false   (stack: [1])
-  12 .   -- skipped
-elseif   -- 1 is popped off the stack and is true    (stack: [])
-  2 1 -  --                                          (stack: [1])
-  if     -- 1 is popped and is true                  (stack: [])
-    23 . -- 23 will be printed
-  else
+if 0 then          -- evaluates to false
+  12 .
+elseif 1 then      -- evaluates to true
+  if 2 1 - then    -- evaluates to 1 which is true
+    23 .           -- 23 is printed
+  elseif 1 then    -- skipped to jump ahead to the `end` block
     34 .
   end
-else     -- elseif will skip to end
-  45 .   -- not evaluated
+elseif 1 then
+  45 .             -- never evaluated as it is equivalent to placing 2 `else` after one another.
 end
 
-1 if
-  1 if
-    43 emit
-  else
-    45 emit
-  end
-else
-  45 emit
-end
-
-0 if
-  45 emit
-else
-  1 if
-    43 emit
-  else
-    45 emit
-  end
-end
-
-1 1 1
-if
-  if
-    if
-      43 emit
+if 1 then
+  if 1 then
+    if 1 then
+      43 emit      -- printed
     end
-  else
+  elseif 1 then
     45 emit
   end
-else
-  45 emit
-end
-
-1 if
-  1 0
-  if
-    45 emit
-  elseif
-    43 emit
-  else
-    45 emit
-  end
-else
-  45 emit
+  43 emit          -- printed
 end
