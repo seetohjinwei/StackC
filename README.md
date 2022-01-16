@@ -61,9 +61,9 @@ print(chr(65)) # prints an `A` character
 
 ### Integer
 
-Pushes the integer onto the stack. Integers are 32-bit integers.
+Pushes the integer onto the stack. Integers are 32-bit integers. Negative integers are supported too.
 
-`1 2 3 100` pushes `1`,`2`,`3`,`1000` onto the stack in order.
+`1 2 3 100 -2` pushes `1`,`2`,`3`,`1000`,`-2` onto the stack in order.
 
 ## Booleans
 
@@ -366,9 +366,7 @@ Some tests are available in `tests` folder, each `.fth` file is matched with a `
 
 ## TODO
 
-- `forth.c` flag to support running a string straight from command line
 - change makeToken to use an array instead of a bunch of if/else
-- allow pushing of negative numbers
 - `forth.c` debug flag to print stack after each operation
 - Come up with a name
 - Power (exponent)
@@ -377,3 +375,4 @@ Some tests are available in `tests` folder, each `.fth` file is matched with a `
 - declaration of constants and small arrays instead of `mem`?
 - Allow user-defined words
 - small standard library?
+- read input?

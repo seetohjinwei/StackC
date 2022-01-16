@@ -287,6 +287,8 @@ int isNumber(char* word) {
     if (current == 0) {
       /* 0 is the EOF character */
       return 1;
+    } else if (i == 0 && current == '-' && word[i+1] != 0) {
+      /* okay to have `-` at the start, and make sure it is not a single `-` */
     } else if (current < 48 || current > 57) {
       return 0;
     }
