@@ -4,23 +4,24 @@ import subprocess
 import sys
 import os
 
+EXT = ".stc"
+
 
 def get_files(dir) -> list[str]:
     result = []
 
     directory = os.fsencode(dir)
-    ext = ".fth"
 
     for file in os.listdir(directory):
         filename = os.fsdecode(file)
-        if filename.endswith(ext):
+        if filename.endswith(EXT):
             result.append(filename[:-4])
 
     return result
 
 
 def run_test(dir: str, test: str, verbose: bool) -> bool:
-    output: subprocess.CompletedProcess = subprocess.run(["./forth", f"{dir}{test}.fth"], capture_output=True)
+    output: subprocess.CompletedProcess = subprocess.run(["./stackc", f"{dir}{test}{EXT}"], capture_output=True)
     stdout = output.stdout
 
     # exit(1) will show up as 1 here
@@ -46,7 +47,7 @@ def parse_argv(dir: str, tests: list[str]) -> tuple[bool]:
         if f == "f":
             print("Overriding all `.o` files.\n")
             for test in tests:
-                output: subprocess.CompletedProcess = subprocess.run(["./forth", f"{dir}{test}.fth"], capture_output=True)
+                output: subprocess.CompletedProcess = subprocess.run(["./stackc", f"{dir}{test}{EXT}"], capture_output=True)
                 stdout = output.stdout
                 with open(f"{dir}{test}.o", "wb+") as o:
                     o.write(stdout)

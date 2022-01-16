@@ -687,7 +687,7 @@ Token* makeToken(int row, int col, char *word) {
 
 /* Main Function */
 int main(int argc, char* argv[]) {
-  assert(argc > 1, "Not enough arguments.\nPlease use `./forth filename` or `./forth -s \"1 .\"`");
+  assert(argc > 1, "Not enough arguments.\nPlease use `./stackc filename` or `./stackc -s \"1 .\"`");
   int flagShort = strcmp(argv[1], "-s") == 0;
   Queue *instructions = newQueue();
   Stack *stack = newStack();

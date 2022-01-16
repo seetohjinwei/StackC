@@ -1,13 +1,12 @@
 .PHONY: run_script
 
-all: forth run_script
+all: stackc run_script
 
 run_script:
 	./test.py
 
-forth: forth.c
-	gcc -Wall forth.c -o forth
+stackc: stackc.c
+	gcc -Wall stackc.c -o stackc
 
 clean:
-	rm forth
-
+	rm stackc

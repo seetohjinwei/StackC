@@ -1,19 +1,17 @@
-# Forth-like Interpreter
+# StackC
 
-This language is heavily inspired by [Forth](https://en.wikipedia.org/wiki/Forth_\(programming_language\)), a stack-based programming language.
+StackC is a stack-oriented programming language that is heavily inspired by [Forth](https://en.wikipedia.org/wiki/Forth_\(programming_language\)), another stack-oriented programming language.
 
-This link is useful for learning [Forth syntax](https://skilldrick.github.io/easyforth/). However, do note that I do not follow all of the syntax in standard Forth.
-
-This interpreter is written in C. Testing framework is written in Python.
+The interpreter is written in C. Testing framework is written in Python.
 
 ## Quick Setup
 
-Minimally you only need to download `forth.c` and compile it with a C compiler. Then, you can run the executable with your program name as the argument. Or alternatively, you can just run a short script with a `-s` flag in front as shown. This short script would be identical to an actutal `.fth` file except it does not accept newline as spacing.
+Minimally you only need to download `stackc.c` and compile it with a C compiler. Then, you can run the executable with your program name as the argument. Or alternatively, you can just run a short script with a `-s` flag in front as shown. This short script would be identical to an actutal `.stc` file except it does not accept newline as spacing.
 
 ```
-gcc forth.c -o forth
-./forth your_program
-./forth -s "if 0 then 45 emit elseif 1 then 43 emit end" -- prints `+` to stdout
+gcc stackc.c -o stackc
+./stackc your_program
+./stackc -s "if 0 then 45 emit elseif 1 then 43 emit end" -- prints `+` to stdout
 ```
 
 ## Documentation
@@ -349,7 +347,7 @@ fib(29)                 # prints 317811
 
 ## Tests
 
-Some tests are available in `tests` folder, each `.fth` file is matched with a `.o` file which is the code and the expected result (stdout) respectively. These tests are run automatically by `test.py`, which must be executed in the root directory.
+Some tests are available in `tests` folder, each `.stc` file is matched with a `.o` file which is the code and the expected result (stdout) respectively. These tests are run automatically by `test.py`, which must be executed in the root directory.
 
 ### Quick Usage of Tests
 
@@ -359,7 +357,7 @@ Some tests are available in `tests` folder, each `.fth` file is matched with a `
 
 | Flag | Description |
 | --- | --- |
-| `f` | Creates (if it does not exist) and updates all `.o` files with the current `.fth` stdout. |
+| `f` | Creates (if it does not exist) and updates all `.o` files with the current `.stc` stdout. |
 | `v` | Verbose output. Displays stdout of the evaluation when there is a non-zero exit code. |
 
 `./test.py -f` or `./test.py -fv`
@@ -367,8 +365,7 @@ Some tests are available in `tests` folder, each `.fth` file is matched with a `
 ## TODO
 
 - change makeToken to use an array instead of a bunch of if/else
-- `forth.c` debug flag to print stack after each operation
-- Come up with a name
+- `stackc.c` debug flag to print stack after each operation
 - Power (exponent)
 - Bitwise operations
 - Rule 110 program
