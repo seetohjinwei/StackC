@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define PARSE_FUNC_TYPE Stack* stack, Queue* instructions, int *mem, Definitions* definitions, Token* token
 #define MAX_WORD_SIZE 256
 #define MAX_STRING_SIZE 1000
 #define MEM_SIZE 100
@@ -33,8 +34,8 @@ typedef enum OPS {
   OP_STR,
   OP_IF,
   OP_ELSEIF,
-  OP_THEN,
   OP_WHILE,
+  OP_THEN,
   OP_END,
   OP_DEFWORD,
   OP_ENDDEF,
@@ -270,7 +271,7 @@ void addDefinition(Definitions *definitions, char *word, Queue *block) {
 DefWord* findDefinition(Definitions *definitions, char *word) {
   DefWord *definition = definitions->head;
   while (definition != NULL) {
-    if (strcmp(word, definition->word) == 0) {
+    if (strncmp(word, definition->word, MAX_WORD_SIZE) == 0) {
       return definition;
     }
     definition = definition->next;
@@ -334,8 +335,175 @@ void jumpToEnd(Stack* stack, Queue* instructions, int *mem, Definitions* definit
   jumpTo(stack, instructions, mem, definitions, jumpPoints, 1);
 }
 
-/* Called when parseQueue() encounters a OP_IF. */
-void controlIf(Stack* stack, Queue* instructions, int *mem, Definitions* definitions, Token* startToken) {
+void parseUNKNOWN(PARSE_FUNC_TYPE) {
+  DefWord *definition = findDefinition(definitions, token->word);
+  if (definition == NULL) {
+    char *message;
+    asprintf(&message, "Word `%s` not implemented yet.", token->word);
+    assertWithToken(0, message, token);
+  }
+  /* Add block to instructions. */
+  Queue *block = definition->block;
+  concatQueues(block, instructions);
+}
+
+void parseINT(PARSE_FUNC_TYPE) {
+  pushStack(stack, token->value);
+}
+
+void parseADD(PARSE_FUNC_TYPE) {
+  int a = popStack(stack);
+  int b = popStack(stack);
+  pushStack(stack, b + a);
+}
+
+void parseSUB(PARSE_FUNC_TYPE) {
+  int a = popStack(stack);
+  int b = popStack(stack);
+  pushStack(stack, b - a);
+}
+
+void parseMUL(PARSE_FUNC_TYPE) {
+  int a = popStack(stack);
+  int b = popStack(stack);
+  pushStack(stack, b * a);
+}
+
+void parseDIV(PARSE_FUNC_TYPE) {
+  int a = popStack(stack);
+  int b = popStack(stack);
+  pushStack(stack, b / a);
+}
+
+void parseREM(PARSE_FUNC_TYPE) {
+  int a = popStack(stack);
+  int b = popStack(stack);
+  pushStack(stack, b % a);
+}
+
+void parseEQU(PARSE_FUNC_TYPE) {
+  int a = popStack(stack);
+  int b = popStack(stack);
+  pushStack(stack, a == b ? 1 : 0);
+}
+
+void parseNEQU(PARSE_FUNC_TYPE) {
+  int a = popStack(stack);
+  int b = popStack(stack);
+  pushStack(stack, a != b ? 1 : 0);
+}
+
+void parseGTE(PARSE_FUNC_TYPE) {
+  int b = popStack(stack);
+  int a = popStack(stack);
+  pushStack(stack, a >= b ? 1 : 0);
+}
+
+void parseLTE(PARSE_FUNC_TYPE) {
+  int b = popStack(stack);
+  int a = popStack(stack);
+  pushStack(stack, a <= b ? 1 : 0);
+}
+
+void parseGT(PARSE_FUNC_TYPE) {
+  int b = popStack(stack);
+  int a = popStack(stack);
+  pushStack(stack, a > b ? 1 : 0);
+}
+
+void parseLT(PARSE_FUNC_TYPE) {
+  int b = popStack(stack);
+  int a = popStack(stack);
+  pushStack(stack, a < b ? 1 : 0);
+}
+
+void parsePEEK(PARSE_FUNC_TYPE) {
+  int top = peekStack(stack);
+  printf("%d\n", top);
+}
+
+void parsePOP(PARSE_FUNC_TYPE) {
+  int top = popStack(stack);
+  printf("%d\n", top);
+}
+
+void parseEMIT(PARSE_FUNC_TYPE) {
+  int top = popStack(stack);
+  printf("%c\n", top);
+}
+
+void parseSIZE(PARSE_FUNC_TYPE) {
+  int size = stack->size;
+  printf("%d\n", size);
+}
+
+void parseCR(PARSE_FUNC_TYPE) {
+  printf("\n");
+}
+
+void parseDUP(PARSE_FUNC_TYPE) {
+  int top = peekStack(stack);
+  pushStack(stack, top);
+}
+
+void parseDROP(PARSE_FUNC_TYPE) {
+  popStack(stack);
+}
+
+void parseSWAP(PARSE_FUNC_TYPE) {
+  int a = popStack(stack);
+  int b = popStack(stack);
+  pushStack(stack, a);
+  pushStack(stack, b);
+}
+
+void parseOVER(PARSE_FUNC_TYPE) {
+  int a = popStack(stack);
+  int second = peekStack(stack);
+  pushStack(stack, a);
+  pushStack(stack, second);
+}
+
+void parseROT(PARSE_FUNC_TYPE) {
+  int c = popStack(stack);
+  int b = popStack(stack);
+  int a = popStack(stack);
+  pushStack(stack, b);
+  pushStack(stack, c);
+  pushStack(stack, a);
+}
+
+void parseSTR(PARSE_FUNC_TYPE) {
+  /* Parsing a string. */
+  char string[MAX_STRING_SIZE];
+  memset(string, 0, sizeof(string));
+  int index = 0;
+  while (!isEmptyQueue(instructions)) {
+    Token *word = pollQueue(instructions)->token;
+    if (word->OP_TYPE == OP_END) {
+      printf("%s\n", string);
+      return;
+    } else {
+      char current;
+      size_t i;
+      for (i = 0; i < MAX_WORD_SIZE; i++) {
+        current = word->word[i];
+        if (current == 0) {
+          /* 0 is the EOF character */
+          break;
+        }
+        assertWithToken(index < MAX_STRING_SIZE, "String too long.", token);
+        string[index++] = current;
+      }
+      /* Add space after each word */
+      assertWithToken(index < MAX_STRING_SIZE, "String too long.", token);
+      string[index++] = ' ';
+    }
+  }
+  assertWithToken(0, "`.\"` without `end`.", token);
+}
+
+void parseIF(Stack* stack, Queue* instructions, int *mem, Definitions* definitions, Token* startToken) {
   int startType = startToken->OP_TYPE;
   if (startType == OP_END) {
     return;
@@ -359,7 +527,7 @@ void controlIf(Stack* stack, Queue* instructions, int *mem, Definitions* definit
     int jumpPoints[2] = {OP_ELSEIF, OP_END};
     jumpTo(stack, instructions, mem, definitions, jumpPoints, 2);
     Token* next = pollQueue(instructions)->token;
-    controlIf(stack, instructions, mem, definitions, next);
+    parseIF(stack, instructions, mem, definitions, next);
   } else {
     int hasEnd = 0;
     while (!isEmptyQueue(instructions)) {
@@ -380,12 +548,14 @@ void controlIf(Stack* stack, Queue* instructions, int *mem, Definitions* definit
   }
 }
 
-/* Called when parseQueue() encounters a OP_WHILE. */
-void controlWhile(Stack* stack, Queue* instructions, int *mem, Definitions* definitions, QueueElem* rootElem) {
+void parseELSEIF(PARSE_FUNC_TYPE) {
+  assertWithToken(0, "`elseif` without if", token);
+}
+
+void parseWHILE(PARSE_FUNC_TYPE) {
   Queue *evalInstructions = newQueue();
   Queue *loopInstructions = newQueue();
   QueueElem *elem;
-  Token *token;
   int type;
   /* Fill up evalInstructions. */
   while (!isEmptyQueue(instructions)) {
@@ -432,177 +602,96 @@ void controlWhile(Stack* stack, Queue* instructions, int *mem, Definitions* defi
   }
 }
 
+void parseTHEN(PARSE_FUNC_TYPE) {
+  assertWithToken(0, "`then` word without starting", token);
+}
+
+void parseEND(PARSE_FUNC_TYPE) {
+  assertWithToken(0, "`end` word without starting.", token);
+}
+
+void parseDEFWORD(PARSE_FUNC_TYPE) {
+  Token *wordNameToken = pollQueue(instructions)->token;
+  assertWithToken(wordNameToken->OP_TYPE == OP_UNKNOWN, "Word must not be defined before.", wordNameToken);
+  char *wordName = wordNameToken->word;
+  int hasEndDef = 0;
+  Queue *block = newQueue();
+  Token *defToken;
+  int type;
+  while (!isEmptyQueue(instructions)) {
+    defToken = pollQueue(instructions)->token;
+    type = defToken->OP_TYPE;
+    assertWithToken(type != OP_DEFWORD, "No nested `defword`", defToken);
+    if (type == OP_ENDDEF) {
+      hasEndDef = 1;
+      break;
+    }
+    pushQueue(block, defToken);
+  }
+  assertWithToken(hasEndDef, "`enddef` not found after `defword`", token);
+  addDefinition(definitions, wordName, block);
+}
+
+void parseENDDEF(PARSE_FUNC_TYPE) {
+  assertWithToken(0, "`enddef` without `defword`", token);
+}
+
+void parseMEM(PARSE_FUNC_TYPE) {
+  Token *indexToken = pollQueue(instructions)->token;
+  int index = indexToken->value;
+  assertWithToken(index >= 0, "Memory index must be non-negative.", indexToken);
+  assertWithToken(index < MEM_SIZE, "Memory index is too large.", indexToken);
+  mem[index] = popStack(stack);
+}
+
+void parseMEMR(PARSE_FUNC_TYPE) {
+  Token *indexToken = pollQueue(instructions)->token;
+  int index = indexToken->value;
+  assertWithToken(index >= 0, "Memory index must be non-negative.", indexToken);
+  assertWithToken(index < MEM_SIZE, "Memory index is too large.", indexToken);
+  pushStack(stack, mem[index]);
+}
+
 /* Parses a token. */
 void parseQueue(Stack* stack, Queue* instructions, int *mem, Definitions* definitions, QueueElem* queueElem) {
   assert(OPS_COUNT == 33, "Update control flow in parse().");
   Token *token = queueElem->token;
-  if (token->OP_TYPE == OP_INT) {
-    pushStack(stack, token->value);
-  } else if (token->OP_TYPE == OP_ADD) {
-    int a = popStack(stack);
-    int b = popStack(stack);
-    pushStack(stack, b + a);
-  } else if (token->OP_TYPE == OP_SUB) {
-    int a = popStack(stack);
-    int b = popStack(stack);
-    pushStack(stack, b - a);
-  } else if (token->OP_TYPE == OP_MUL) {
-    int a = popStack(stack);
-    int b = popStack(stack);
-    pushStack(stack, b * a);
-  } else if (token->OP_TYPE == OP_DIV) {
-    int a = popStack(stack);
-    int b = popStack(stack);
-    pushStack(stack, b / a);
-  } else if (token->OP_TYPE == OP_REM) {
-    int a = popStack(stack);
-    int b = popStack(stack);
-    pushStack(stack, b % a);
-  } else if (token->OP_TYPE == OP_EQU) {
-    int a = popStack(stack);
-    int b = popStack(stack);
-    pushStack(stack, a == b ? 1 : 0);
-  } else if (token->OP_TYPE == OP_NEQU) {
-    int a = popStack(stack);
-    int b = popStack(stack);
-    pushStack(stack, a != b ? 1 : 0);
-  } else if (token->OP_TYPE == OP_GTE) {
-    int b = popStack(stack);
-    int a = popStack(stack);
-    pushStack(stack, a >= b ? 1 : 0);
-  } else if (token->OP_TYPE == OP_LTE) {
-    int b = popStack(stack);
-    int a = popStack(stack);
-    pushStack(stack, a <= b ? 1 : 0);
-  } else if (token->OP_TYPE == OP_GT) {
-    int b = popStack(stack);
-    int a = popStack(stack);
-    pushStack(stack, a > b ? 1 : 0);
-  } else if (token->OP_TYPE == OP_LT) {
-    int b = popStack(stack);
-    int a = popStack(stack);
-    pushStack(stack, a < b ? 1 : 0);
-  } else if (token->OP_TYPE == OP_PEEK) {
-    int top = peekStack(stack);
-    printf("%d\n", top);
-  } else if (token->OP_TYPE == OP_POP) {
-    int top = popStack(stack);
-    printf("%d\n", top);
-  } else if (token->OP_TYPE == OP_EMIT) {
-    int top = popStack(stack);
-    printf("%c\n", top);
-  } else if (token->OP_TYPE == OP_SIZE) {
-    int size = stack->size;
-    printf("%d\n", size);
-  } else if (token->OP_TYPE == OP_CR) {
-    printf("\n");
-  } else if (token->OP_TYPE == OP_DUP) {
-    int top = peekStack(stack);
-    pushStack(stack, top);
-  } else if (token->OP_TYPE == OP_DROP) {
-    popStack(stack);
-  } else if (token->OP_TYPE == OP_SWAP) {
-    int a = popStack(stack);
-    int b = popStack(stack);
-    pushStack(stack, a);
-    pushStack(stack, b);
-  } else if (token->OP_TYPE == OP_OVER) {
-    int a = popStack(stack);
-    int second = peekStack(stack);
-    pushStack(stack, a);
-    pushStack(stack, second);
-  } else if (token->OP_TYPE == OP_ROT) {
-    int c = popStack(stack);
-    int b = popStack(stack);
-    int a = popStack(stack);
-    pushStack(stack, b);
-    pushStack(stack, c);
-    pushStack(stack, a);
-  } else if (token->OP_TYPE == OP_STR) {
-    /* Parsing a string. */
-    char string[MAX_STRING_SIZE];
-    memset(string, 0, sizeof(string));
-    int index = 0;
-    while (!isEmptyQueue(instructions)) {
-      Token *word = pollQueue(instructions)->token;
-      if (word->OP_TYPE == OP_END) {
-        printf("%s\n", string);
-        return;
-      } else {
-        char current;
-        size_t i;
-        for (i = 0; i < MAX_WORD_SIZE; i++) {
-          current = word->word[i];
-          if (current == 0) {
-            /* 0 is the EOF character */
-            break;
-          }
-          assertWithToken(index < MAX_STRING_SIZE, "String too long.", token);
-          string[index++] = current;
-        }
-        /* Add space after each word */
-        assertWithToken(index < MAX_STRING_SIZE, "String too long.", token);
-        string[index++] = ' ';
-      }
-    }
-    assertWithToken(0, "`.\"` without `end`.", token);
-  } else if (token->OP_TYPE == OP_IF) {
-    controlIf(stack, instructions, mem, definitions, token);
-  } else if (token->OP_TYPE == OP_ELSEIF) {
-    assertWithToken(0, "`elseif` without if", token);
-  } else if (token->OP_TYPE == OP_WHILE) {
-    controlWhile(stack, instructions, mem, definitions, queueElem);
-  } else if (token->OP_TYPE == OP_THEN) {
-    assertWithToken(0, "`then` word without starting", token);
-  } else if (token->OP_TYPE == OP_END) {
-    assertWithToken(0, "`end` word without starting.", token);
-  } else if (token->OP_TYPE == OP_DEFWORD) {
-    Token *wordNameToken = pollQueue(instructions)->token;
-    assertWithToken(wordNameToken->OP_TYPE == OP_UNKNOWN, "Word must not be defined before.", wordNameToken);
-    char *wordName = wordNameToken->word;
-    int hasEndDef = 0;
-    Queue *block = newQueue();
-    Token *defToken;
-    int type;
-    while (!isEmptyQueue(instructions)) {
-      defToken = pollQueue(instructions)->token;
-      type = defToken->OP_TYPE;
-      assertWithToken(type != OP_DEFWORD, "No nested `defword`", defToken);
-      if (type == OP_ENDDEF) {
-        hasEndDef = 1;
-        break;
-      }
-      pushQueue(block, defToken);
-    }
-    assertWithToken(hasEndDef, "`enddef` not found after `defword`", token);
-    addDefinition(definitions, wordName, block);
-  } else if (token->OP_TYPE == OP_ENDDEF) {
-    assertWithToken(0, "`enddef` without `defword`", token);
-  } else if (token->OP_TYPE == OP_MEM) {
-    Token *indexToken = pollQueue(instructions)->token;
-    int index = indexToken->value;
-    assertWithToken(index >= 0, "Memory index must be non-negative.", indexToken);
-    assertWithToken(index < MEM_SIZE, "Memory index is too large.", indexToken);
-    mem[index] = popStack(stack);
-  } else if (token->OP_TYPE == OP_MEMR) {
-    Token *indexToken = pollQueue(instructions)->token;
-    int index = indexToken->value;
-    assertWithToken(index >= 0, "Memory index must be non-negative.", indexToken);
-    assertWithToken(index < MEM_SIZE, "Memory index is too large.", indexToken);
-    pushStack(stack, mem[index]);
-  } else if (token->OP_TYPE == OP_UNKNOWN) {
-    DefWord *definition = findDefinition(definitions, token->word);
-    if (definition == NULL) {
-      char *message;
-      asprintf(&message, "Word `%s` not implemented yet.", token->word);
-      assertWithToken(0, message, token);
-    }
-    /* Add block to instructions. */
-    Queue *block = definition->block;
-    concatQueues(block, instructions);
-  } else {
-    assertWithToken(0, "Unreachable code.", token);
-  }
+  void (*parsers[OPS_COUNT]) (PARSE_FUNC_TYPE) = {
+    parseUNKNOWN,
+    parseINT,
+    parseADD,
+    parseSUB,
+    parseMUL,
+    parseDIV,
+    parseREM,
+    parseEQU,
+    parseNEQU,
+    parseGTE,
+    parseLTE,
+    parseGT,
+    parseLT,
+    parsePEEK,
+    parsePOP,
+    parseEMIT,
+    parseSIZE,
+    parseCR,
+    parseDUP,
+    parseDROP,
+    parseSWAP,
+    parseOVER,
+    parseROT,
+    parseSTR,
+    parseIF,
+    parseELSEIF,
+    parseWHILE,
+    parseTHEN,
+    parseEND,
+    parseDEFWORD,
+    parseENDDEF,
+    parseMEM,
+    parseMEMR,
+  };
+  parsers[token->OP_TYPE](stack, instructions, mem, definitions, token);
 }
 
 Token* makeToken(int row, int col, char *word) {
@@ -611,76 +700,56 @@ Token* makeToken(int row, int col, char *word) {
   token->row = row;
   token->col = col;
   token->value = 0;
+  token->OP_TYPE = OP_UNKNOWN;
   strncpy(token->word, word, MAX_WORD_SIZE);
   assert(OPS_COUNT == 33, "Update control flow in makeToken().");
   // control flow to decide type of operation
+  char *types[OPS_COUNT] = {
+    "UNKNOWN",
+    "INT",
+    "+",
+    "-",
+    "*",
+    "/",
+    "%",
+    "=",
+    "!=",
+    ">=",
+    "<=",
+    ">",
+    "<",
+    ",",
+    ".",
+    "emit",
+    ".s",
+    "cr",
+    "dup",
+    "drop",
+    "swap",
+    "over",
+    "rot",
+    ".\"",
+    "if",
+    "elseif",
+    "while",
+    "then",
+    "end",
+    "defword",
+    "enddef",
+    "mem",
+    "memr",
+  };
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;
     token->value = atoi(word);
-  } else if (strcmp(word, "+") == 0) {
-    token->OP_TYPE = OP_ADD;
-  } else if (strcmp(word, "-") == 0) {
-    token->OP_TYPE = OP_SUB;
-  } else if (strcmp(word, "*") == 0) {
-    token->OP_TYPE = OP_MUL;
-  } else if (strcmp(word, "/") == 0) {
-    token->OP_TYPE = OP_DIV;
-  } else if (strcmp(word, "%") == 0) {
-    token->OP_TYPE = OP_REM;
-  } else if (strcmp(word, "=") == 0) {
-    token->OP_TYPE = OP_EQU;
-  } else if (strcmp(word, "!=") == 0) {
-    token->OP_TYPE = OP_NEQU;
-  } else if (strcmp(word, ">=") == 0) {
-    token->OP_TYPE = OP_GTE;
-  } else if (strcmp(word, "<=") == 0) {
-    token->OP_TYPE = OP_LTE;
-  } else if (strcmp(word, ">") == 0) {
-    token->OP_TYPE = OP_GT;
-  } else if (strcmp(word, "<") == 0) {
-    token->OP_TYPE = OP_LT;
-  } else if (strcmp(word, ",") == 0) {
-    token->OP_TYPE = OP_PEEK;
-  } else if (strcmp(word, ".") == 0) {
-    token->OP_TYPE = OP_POP;
-  } else if (strcmp(word, "emit") == 0) {
-    token->OP_TYPE = OP_EMIT;
-  } else if (strcmp(word, ".s") == 0) {
-    token->OP_TYPE = OP_SIZE;
-  } else if (strcmp(word, "cr") == 0) {
-    token->OP_TYPE = OP_CR;
-  } else if (strcmp(word, "dup") == 0) {
-    token->OP_TYPE = OP_DUP;
-  } else if (strcmp(word, "drop") == 0) {
-    token->OP_TYPE = OP_DROP;
-  } else if (strcmp(word, "swap") == 0) {
-    token->OP_TYPE = OP_SWAP;
-  } else if (strcmp(word, "over") == 0) {
-    token->OP_TYPE = OP_OVER;
-  } else if (strcmp(word, "rot") == 0) {
-    token->OP_TYPE = OP_ROT;
-  } else if (strcmp(word, ".\"") == 0) {
-    token->OP_TYPE = OP_STR;
-  } else if (strcmp(word, "if") == 0) {
-    token->OP_TYPE = OP_IF;
-  } else if (strcmp(word, "elseif") == 0) {
-    token->OP_TYPE = OP_ELSEIF;
-  } else if (strcmp(word, "while") == 0) {
-    token->OP_TYPE = OP_WHILE;
-  } else if (strcmp(word, "then") == 0) {
-    token->OP_TYPE = OP_THEN;
-  } else if (strcmp(word, "end") == 0) {
-    token->OP_TYPE = OP_END;
-  } else if (strcmp(word, "defword") == 0) {
-    token->OP_TYPE = OP_DEFWORD;
-  } else if (strcmp(word, "enddef") == 0) {
-    token->OP_TYPE = OP_ENDDEF;
-  } else if (strcmp(word, "mem") == 0) {
-    token->OP_TYPE = OP_MEM;
-  } else if (strcmp(word, "memr") == 0) {
-    token->OP_TYPE = OP_MEMR;
   } else {
-    token->OP_TYPE = OP_UNKNOWN;
+    int i;
+    for (i = 0; i < OPS_COUNT; i++) {
+      if (strncmp(word, types[i], MAX_WORD_SIZE) == 0) {
+        token->OP_TYPE = i;
+        break;
+      }
+    }
   }
   return token;
 }
@@ -688,7 +757,7 @@ Token* makeToken(int row, int col, char *word) {
 /* Main Function */
 int main(int argc, char* argv[]) {
   assert(argc > 1, "Not enough arguments.\nPlease use `./stackc filename` or `./stackc -s \"1 .\"`");
-  int flagShort = strcmp(argv[1], "-s") == 0;
+  int flagShort = strncmp(argv[1], "-s", 2) == 0;
   Queue *instructions = newQueue();
   Stack *stack = newStack();
   Definitions *definitions = newDefinitions();

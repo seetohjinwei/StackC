@@ -364,7 +364,6 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 
 ## TODO
 
-- change makeToken to use an array instead of a bunch of if/else
 - `stackc.c` debug flag to print stack after each operation
 - Power (exponent)
 - Bitwise operations
