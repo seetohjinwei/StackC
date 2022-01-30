@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define DEF_SIZE 64
 #define PARSE_FUNC_TYPE Stack* stack, Queue* instructions, int *mem, Definitions* definitions, Token* token
 #define MAX_WORD_SIZE 256
 #define MAX_STRING_SIZE 1000
@@ -251,25 +252,52 @@ int popStack(Stack* stack) {
 
 /* Initialise Definitions. */
 Definitions* newDefinitions() {
-  Definitions *definitions;
-  definitions = (Definitions*) malloc(sizeof(Definitions));
-  definitions->head = NULL;
+  Definitions *definitions = malloc(sizeof(*definitions) * DEF_SIZE);
+  int i;
+  for (i = 0; i < DEF_SIZE; i++) {
+    Definitions *definition;
+    definition = (Definitions*) malloc(sizeof(DefWord));
+    definition->head = NULL;
+    definitions[i] = *definition;
+  }
   return definitions;
 }
 
+int getHeadIndex(char *word) {
+  int headsSize = DEF_SIZE - 1;
+  char heads[] = {
+    'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
+  'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+  '0','1','2','3','4','5','6','7','8','9','_'
+  };
+  char first = word[0];
+  int index;
+  for (index = 0; index < headsSize; index++) {
+    char head = heads[index];
+    if (first == head) {
+      break;
+    }
+  }
+  return index;
+}
+
 /* Add a word definition. */
-void addDefinition(Definitions *definitions, char *word, Queue *block) {
+void addDefinition(Definitions definitions[], char *word, Queue *block) {
+  int index = getHeadIndex(word);
+  Definitions *group = &definitions[index];
   DefWord *definition;
   definition = (DefWord*) malloc(sizeof(DefWord));
   strncpy(definition->word, word, MAX_WORD_SIZE);
   definition->block = block;
-  definition->next = definitions->head;
-  definitions->head = definition;
+  definition->next = group->head;
+  group->head = definition;
 }
 
 /* Find definition of a word, NULL if not found. */
-DefWord* findDefinition(Definitions *definitions, char *word) {
-  DefWord *definition = definitions->head;
+DefWord* findDefinition(Definitions definitions[], char *word) {
+  int index = getHeadIndex(word);
+  Definitions *group = &definitions[index];
+  DefWord *definition = group->head;
   while (definition != NULL) {
     if (strncmp(word, definition->word, MAX_WORD_SIZE) == 0) {
       return definition;

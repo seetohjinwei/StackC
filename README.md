@@ -37,6 +37,8 @@ Words must be separated with either a ` ` (space character) or `\n` (new line). 
 
 The above two programs are equivalent (aside from readability).
 
+FYI: Words are hashed by their first character, so that searches are a bit more performant.
+
 ### Comments
 
 Comments are declared by `--`, every character after `--` is ignored by the interpreter.
@@ -369,6 +371,39 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 - Bitwise operations
 - Rule 110 program
 - declaration of constants and small arrays instead of `mem`?
-- Allow user-defined words
 - small standard library?
 - read input?
+
+- compare with char and not int (update the other one too)
+- remove some unnecessary primitive operations, only have primitive operations if impossible or very hard to implement in stackc
+- printing to stdout have no new line, no space at the end
+
+- `.` will print either int or string from the stack
+- `char and int` to typecast (check if valid ascii)
+
+- word that pops off integer N, then pops off N characters (first popped = first character in string), these characters will be concatenated into a string
+
+- reverse N items (0 for everything) on the stack (in stdlib?)
+- have access to a second stack?
+
+- "multi-line
+strings"
+
+- does C have dynamic string length? or we can just init a really big one (or linkedlist)
+
+TYPE_CHAR
+TYPE_INT
+TYPE_STR
+
+does C have type unions? if not save as below
+
+node
+->type
+->int_value (shared with char)
+->string_value
+
+Word names cannot contain integer and cannot contain double quotation marks
+
+= work for string?
+
+import/include files
