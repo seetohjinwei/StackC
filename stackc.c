@@ -22,11 +22,9 @@ typedef enum OPS {
   OP_LTE,
   OP_GT,
   OP_LT,
-  OP_PEEK,
   OP_POP,
   OP_EMIT,
   OP_SIZE,
-  OP_CR,
   OP_PRINT,
   OP_DUP,
   OP_DROP,
@@ -497,11 +495,6 @@ void parseLT(PARSE_FUNC_TYPE) {
   pushStack(stack, a < b ? 1 : 0);
 }
 
-void parsePEEK(PARSE_FUNC_TYPE) {
-  int top = peekStack(stack);
-  printf("%d", top);
-}
-
 void parsePOP(PARSE_FUNC_TYPE) {
   int top = popStack(stack);
   printf("%d", top);
@@ -515,10 +508,6 @@ void parseEMIT(PARSE_FUNC_TYPE) {
 void parseSIZE(PARSE_FUNC_TYPE) {
   int size = stack->size;
   printf("%d", size);
-}
-
-void parseCR(PARSE_FUNC_TYPE) {
-  printf("\n");
 }
 
 void parsePRINT(PARSE_FUNC_TYPE) {
@@ -737,7 +726,7 @@ void parseMEMR(PARSE_FUNC_TYPE) {
 
 /* Parses a token. */
 void parseQueue(Stack* stack, Queue* instructions, int *mem, Definitions* definitions, QueueElem* queueElem) {
-  assert(OPS_COUNT == 34, "Update control flow in parse().");
+  assert(OPS_COUNT == 32, "Update control flow in parse().");
   Token *token = queueElem->token;
   void (*parsers[OPS_COUNT]) (PARSE_FUNC_TYPE) = {
     parseUNKNOWN,
@@ -754,11 +743,9 @@ void parseQueue(Stack* stack, Queue* instructions, int *mem, Definitions* defini
     parseLTE,
     parseGT,
     parseLT,
-    parsePEEK,
     parsePOP,
     parseEMIT,
     parseSIZE,
-    parseCR,
     parsePRINT,
     parseDUP,
     parseDROP,
@@ -786,7 +773,7 @@ Token* makeToken(int row, int col, char *word) {
   token->value = 0;
   token->OP_TYPE = OP_UNKNOWN;
   strncpy(token->word, word, MAX_WORD_SIZE);
-  assert(OPS_COUNT == 34, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 32, "Update control flow in makeToken().");
   /* control flow to decide type of operation */
   char *types[OPS_COUNT] = {
     "", /* UNKNOWN */
@@ -803,11 +790,9 @@ Token* makeToken(int row, int col, char *word) {
     "<=",
     ">",
     "<",
-    ",",
     ".",
     "emit",
     ".s",
-    "cr",
     "print",
     "dup",
     "drop",
