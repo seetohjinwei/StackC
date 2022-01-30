@@ -402,8 +402,6 @@ node
 ->int_value (shared with char)
 ->string_value
 
-Word names cannot contain integer and cannot contain double quotation marks
-
 = work for string?
 
 import/include files

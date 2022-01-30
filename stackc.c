@@ -42,7 +42,7 @@ typedef enum OPS {
   OP_ENDDEF,
   OP_MEM,
   OP_MEMR,
-  OPS_COUNT // size of enum OPS
+  OPS_COUNT /* size of enum OPS */
 } OPS;
 
 typedef struct Queue Queue;
@@ -638,10 +638,33 @@ void parseEND(PARSE_FUNC_TYPE) {
   assertWithToken(0, "`end` word without starting.", token);
 }
 
+int validateWordName(char *word) {
+  char first = word[0];
+  if ('0' <= first || first <= '9') {
+    /* first character cannot be a number */
+    return 1;
+  }
+  /* no character in the word can be any of these */
+  char invalidChars[] = {'"'};
+  int invalidCharsSize = 1;
+  char *w = word;
+  while (*w != '\0') {
+    int i;
+    for (i = 0; i < invalidCharsSize; i++) {
+      if (*w == invalidChars[i]) {
+        return 0;
+      }
+    }
+    w++;
+  }
+  return 1;
+}
+
 void parseDEFWORD(PARSE_FUNC_TYPE) {
   Token *wordNameToken = pollQueue(instructions)->token;
   assertWithToken(wordNameToken->OP_TYPE == OP_UNKNOWN, "Word must not be defined before.", wordNameToken);
   char *wordName = wordNameToken->word;
+  assertWithToken(validateWordName(wordName) == 1, "Word name contains invalid characters.", wordNameToken);
   int hasEndDef = 0;
   Queue *block = newQueue();
   Token *defToken;
@@ -731,7 +754,7 @@ Token* makeToken(int row, int col, char *word) {
   token->OP_TYPE = OP_UNKNOWN;
   strncpy(token->word, word, MAX_WORD_SIZE);
   assert(OPS_COUNT == 33, "Update control flow in makeToken().");
-  // control flow to decide type of operation
+  /* control flow to decide type of operation */
   char *types[OPS_COUNT] = {
     "UNKNOWN",
     "INT",
