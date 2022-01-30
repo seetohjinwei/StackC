@@ -2,11 +2,11 @@
 1
 while dup 100 <= then
   if dup 15 % 0 = then
-    ." FizzBuzz end
+    "FizzBuzz\n" print
   elseif dup 3 % 0 = then
-    ." Fizz end
+    "Fizz\n" print
   elseif dup 5 % 0 = then
-    ." Buzz end
+    "Buzz\n" print
   elseif 1 then
     ,
   end
@@ -41,7 +41,7 @@ drop
 
 5
 while dup 0 > then
-  ." Hi end
+  "Hi\n" print
   1 -
 end
 drop

@@ -1,11 +1,11 @@
-." This is a single line string! end
+"Hello World\n" print
 
-." This is a
+"This is\t tabbed!" print
 
-"multi-line"
+"C" "B" "A" print print print
 
-string
+-- "FA"A print -- is invalid
 
-end
+"ABC" print
 
-." I am the end. end
+"\n\n\t\\\n" print

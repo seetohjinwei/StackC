@@ -24,16 +24,16 @@ end
 
 0
 if dup 5 > then
-  . ." is more than 5 end
+  . " is more than 5" print
 elseif 1 then
-  . ." is less than 5 end
+  . " is less than 5" print
 end
 
 10
 if dup 5 > then
-  . ." is more than 5 end
+  . " is more than 5" print
 elseif 1 then
-  . ." is less than 5 end
+  . " is less than 5" print
 end
 
 -- nested loops

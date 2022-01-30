@@ -170,35 +170,29 @@ print(len(stack))          # prints 0
 
 ### Strings
 
-String functionality is *extremely* limited and only intended to be used for printing short messages.
+Strings are saved by characters in the stack.
 
-Any characters between `."` and `end` is evaluated as characters and printed to standard output. There is no way to save strings to the stack.
+`"ABC"` pushes 0, 67, 66, 65, 3 onto the stack.
 
-Do note that there are required space characters after and before `."` and `end` respectively. They will not be printed.
+The string size will be at the top of the stack, followed by `n` characters in ascii and then the terminating NULL character.
 
-No many how many spaces or newlines there are between each word in the string, it is ignored and replaced with a single space character, *and* there is a extra space and newline character after every string. This is because I parse the file completely before interpreting it and this results in a loss of information about the original spacing between the words. But doing it this way allows me to check for potential errors before interpreting the file.
+`print` pops a string off the stack and prints it to standard output.
 
-Also, if you are trying to print `end`, I am afraid that there is no way to escape the `end` keyword. You can probably just print `end.` or something, I don't know.
-
-Also also, strings are limited to 1000 characters.
+Multi-line strings are not directly supported. However you can use `\n` and `\t` for a new line and tab respectively. `\\` to escape the backslash.
 
 ```
-." This is a single line string! end
+"Hello World\n" print
 
-." This is a
+"This is\t tabbed!" print
 
-"multi-line"
-
-string
-
-end
+"C" "B" "A" print print print
 ```
 
 will print the following to the standard output
 
 ```
-This is a single line string! 
-This is a "multi-line" string 
+Hello World
+This is    tabbed!ABC
 ```
 
 ### Stack Manipulation
@@ -374,34 +368,10 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 - small standard library?
 - read input?
 
-- compare with char and not int (update the other one too)
 - remove some unnecessary primitive operations, only have primitive operations if impossible or very hard to implement in stackc
 - printing to stdout have no new line, no space at the end
 
-- `.` will print either int or string from the stack
-- `char and int` to typecast (check if valid ascii)
-
-- word that pops off integer N, then pops off N characters (first popped = first character in string), these characters will be concatenated into a string
-
 - reverse N items (0 for everything) on the stack (in stdlib?)
 - have access to a second stack?
-
-- "multi-line
-strings"
-
-- does C have dynamic string length? or we can just init a really big one (or linkedlist)
-
-TYPE_CHAR
-TYPE_INT
-TYPE_STR
-
-does C have type unions? if not save as below
-
-node
-->type
-->int_value (shared with char)
-->string_value
-
-= work for string?
 
 import/include files
