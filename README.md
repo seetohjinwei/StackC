@@ -140,15 +140,12 @@ The following words will print into standard output. Will have an error if the o
 
 | Word | Description |
 | --- | --- |
-| `,` | peeks at the top of the stack, without removing it, printing the integer. |
 | `.` | pops from the top of the stack, removing it, printing the integer. |
 | `emit` | similar to `.` but prints the ASCII equivalent instead. |
 | `.s` | prints the size of the current stack. |
-| `cr` | prints a new line |
 
 ```
 65 1 2 3
-,    -- prints 3
 .s   -- prints 4
 .    -- prints 3
 .    -- prints 2
@@ -253,13 +250,13 @@ The following program is FizzBuzz from 1 to 100.
 1
 while dup 100 <= then
   if dup 15 % 0 = then
-    ." FizzBuzz end
+    "FizzBuzz\n" print
   elseif dup 3 % 0 = then
-    ." Fizz end
+    "Fizz\n" print
   elseif dup 5 % 0 = then
-    ." Buzz end
+    "Buzz\n" print
   elseif 1 then
-    ,
+    dup . "\n" print
   end
   1 +
 end
@@ -368,10 +365,13 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 - small standard library?
 - read input?
 
-- remove some unnecessary primitive operations, only have primitive operations if impossible or very hard to implement in stackc
 - printing to stdout have no new line, no space at the end
 
 - reverse N items (0 for everything) on the stack (in stdlib?)
 - have access to a second stack?
 
 import/include files
+
+stdlib ideas:
+- cr -> newline quickly
+- peek -> dup pop
