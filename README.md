@@ -294,7 +294,7 @@ If you think this violates the idea of a stack-based language too much, then fee
 
 It is possible to define custom words, which is useful for repeated operations.
 
-`defword <wordname> <word body> enddef`
+`def <wordname> <word body> enddef`
 
 After the definition of the custom word, every other occurrence of a word is effectively replaced by the word body.
 
@@ -304,12 +304,12 @@ The following program computes the nth fibonaci number (this is what I came up w
 
 ```
 -- duplicates top 2 elements
-defword dup2 -- int, int -> int, int, int, int
+def dup2 -- int, int -> int, int, int, int
   over over
 enddef
 
 -- nth fibonacci number
-defword fib -- int -> int
+def fib -- int -> int
   1 -
   0 1 rot
   while dup 0 > then
@@ -362,7 +362,6 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 - Bitwise operations
 - Rule 110 program
 - declaration of constants and small arrays instead of `mem`?
-- small standard library?
 - read input?
 
 - printing to stdout have no new line, no space at the end
@@ -370,8 +369,4 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 - reverse N items (0 for everything) on the stack (in stdlib?)
 - have access to a second stack?
 
-import/include files
-
-stdlib ideas:
-- cr -> newline quickly
-- peek -> dup pop
+import/include files so we can actually import and use the stdlib.stc!!!

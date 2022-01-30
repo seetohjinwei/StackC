@@ -1,4 +1,4 @@
-defword , dup . enddef
+def , dup . enddef
 
 -- FizzBuzz from 1 to 100
 1

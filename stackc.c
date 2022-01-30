@@ -693,19 +693,19 @@ void parseDEFWORD(PARSE_FUNC_TYPE) {
   while (!isEmptyQueue(instructions)) {
     defToken = pollQueue(instructions)->token;
     type = defToken->OP_TYPE;
-    assertWithToken(type != OP_DEFWORD, "No nested `defword`", defToken);
+    assertWithToken(type != OP_DEFWORD, "No nested `def`", defToken);
     if (type == OP_ENDDEF) {
       hasEndDef = 1;
       break;
     }
     pushQueue(block, defToken);
   }
-  assertWithToken(hasEndDef, "`enddef` not found after `defword`", token);
+  assertWithToken(hasEndDef, "`enddef` not found after `def`", token);
   addDefinition(definitions, wordName, block);
 }
 
 void parseENDDEF(PARSE_FUNC_TYPE) {
-  assertWithToken(0, "`enddef` without `defword`", token);
+  assertWithToken(0, "`enddef` without `def`", token);
 }
 
 void parseMEM(PARSE_FUNC_TYPE) {
@@ -804,7 +804,7 @@ Token* makeToken(int row, int col, char *word) {
     "while",
     "then",
     "end",
-    "defword",
+    "def",
     "enddef",
     "mem",
     "memr",
