@@ -1,6 +1,4 @@
-0
--1
-Assertion Error: Memory index is too large.
+0-1Assertion Error: Memory index is too large.
 -- Token --
 Position: 2 5
 OP_TYPE: 1

@@ -8,7 +8,7 @@ while dup 100 <= then
   elseif dup 5 % 0 = then
     "Buzz\n" print
   elseif 1 then
-    ,
+    , "\n" print
   end
   1 +
 end

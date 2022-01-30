@@ -499,22 +499,22 @@ void parseLT(PARSE_FUNC_TYPE) {
 
 void parsePEEK(PARSE_FUNC_TYPE) {
   int top = peekStack(stack);
-  printf("%d\n", top);
+  printf("%d", top);
 }
 
 void parsePOP(PARSE_FUNC_TYPE) {
   int top = popStack(stack);
-  printf("%d\n", top);
+  printf("%d", top);
 }
 
 void parseEMIT(PARSE_FUNC_TYPE) {
   int top = popStack(stack);
-  printf("%c\n", top);
+  printf("%c", top);
 }
 
 void parseSIZE(PARSE_FUNC_TYPE) {
   int size = stack->size;
-  printf("%d\n", size);
+  printf("%d", size);
 }
 
 void parseCR(PARSE_FUNC_TYPE) {
