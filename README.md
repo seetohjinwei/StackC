@@ -329,6 +329,10 @@ def fib(n):
 fib(29)                 # prints 317811
 ```
 
+## Standard Library
+
+Documentation for standard library available [here](stdlib.md).
+
 ## Tests
 
 Some tests are available in `tests` folder, each `.stc` file is matched with a `.o` file which is the code and the expected result (stdout) respectively. These tests are run automatically by `test.py`, which must be executed in the root directory.

@@ -8,6 +8,15 @@ def rot3 -- A, B, C -> C, A, B
   rot rot
 enddef
 
+def cr -- None -> None
+  "\n" print
+enddef
+
+-- peek operation
+def , -- int -> int
+  dup .
+enddef
+
 -- haven't removed as a primitive
 def print2
   while dup 0 > then
@@ -19,15 +28,6 @@ enddef
 
 def reverseN -- n ints, n -> n ints
   "not possible without an additional stack?" print
-enddef
-
-def cr -- None -> None
-  "\n" print
-enddef
-
--- peek operation
-def , -- int -> int
-  dup .
 enddef
 
 -- MATH OPERATIONS (math library) --
@@ -59,6 +59,28 @@ def pow -- a, b -> a^b
     over *
   end
   drop swap drop
+enddef
+
+def abs -- a -> |a|
+  if dup 0 < then
+    0 swap -
+  end
+enddef
+
+def max -- a, b -> max(a, b)
+  if dup2 > then
+    drop
+  elseif 1 then
+    swap drop
+  end
+enddef
+
+def min -- a, b -> max(a, b)
+  if dup2 < then
+    drop
+  elseif 1 then
+    swap drop
+  end
 enddef
 
 
@@ -109,3 +131,13 @@ if 12 factorial 479001600 = then
 elseif 1 then
   "12 factorial wrong\n" print
 end
+
+2 abs . cr
+0 abs . cr
+-2 abs . cr
+
+1 2 max . cr
+2 1 max . cr
+
+1 2 min . cr
+2 1 min . cr
