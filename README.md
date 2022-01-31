@@ -1,6 +1,6 @@
 # StackC
 
-StackC is a stack-oriented programming language that is heavily inspired by [Forth](https://en.wikipedia.org/wiki/Forth_\(programming_language\)), another stack-oriented programming language.
+StackC is a stack-oriented programming language that is inspired by [Forth](https://en.wikipedia.org/wiki/Forth_\(programming_language\)), another stack-oriented programming language.
 
 The interpreter is written in C. Testing framework is written in Python.
 
