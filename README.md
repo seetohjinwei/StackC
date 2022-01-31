@@ -4,6 +4,8 @@ StackC is a stack-oriented programming language that is heavily inspired by [For
 
 The interpreter is written in C. Testing framework is written in Python.
 
+If anyone stumbles upon this and has any feedback/bug reports, feel free to open an issue regarding it. I would appreciate it, thank you!
+
 ## Quick Setup
 
 Minimally you only need to download `stackc.c` and compile it with a C compiler. Then, you can run the executable with your program name as the argument. Or alternatively, you can just run a short script with a `-s` flag in front as shown. This short script would be identical to an actutal `.stc` file except it does not accept newline as spacing.
@@ -277,22 +279,9 @@ while x <= 100:
   x += 1
 ```
 
-### Memory
-
-There is a integer array (of size 100) for the program to utilise. All values in the array is initialised to be 0 when the program is ran. It is implemented with a C array so there is random memory access.
-
-This is created for conveniences like having global variables or when creating loops or whatever else you find a use for!
-
-If you think this violates the idea of a stack-based language too much, then feel free to just not use these. If these keywords are not found in the program, the array is never initialised in the interpreter.
-
-| Word | Description |
-| --- | --- |
-| `mem A` | pops the first element off the stack and saves it to index `A` |
-| `memr A` | pushes the value of index `A` onto the stack |
-
 ### Defining Words
 
-It is possible to define custom words, which is useful for repeated operations.
+It is possible to define custom words, which is useful for repeated operations. It is also possible to define "constants" this way as well, however, at the moment, the interpreter does not optimise for this.
 
 `def <wordname> <word body> enddef`
 
@@ -358,15 +347,10 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 ## TODO
 
 - `stackc.c` debug flag to print stack after each operation
-- Power (exponent)
 - Bitwise operations
 - Rule 110 program
-- declaration of constants and small arrays instead of `mem`?
 - read input?
 
-- printing to stdout have no new line, no space at the end
-
-- reverse N items (0 for everything) on the stack (in stdlib?)
 - have access to a second stack?
 
 import/include files so we can actually import and use the stdlib.stc!!!
