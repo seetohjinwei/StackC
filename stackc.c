@@ -803,6 +803,23 @@ Token* makeToken(int row, int col, char *word) {
   return token;
 }
 
+int endsWith(char *string, char *ending) {
+  char *c = string, *d = ending;
+  while (1) {
+    if (*d == '\0') {
+      return *c == '\0';
+    } else if (*c == '\0') {
+      return 0;
+    } else if (*c == *d) {
+      c++;
+      d++;
+    } else {
+      c++;
+      d = ending;
+    }
+  }
+}
+
 /* Main Function */
 int main(int argc, char* argv[]) {
   assert(argc > 1, "Not enough arguments.\nPlease use `./stackc filename` or `./stackc -s \"1 .\"`");
@@ -836,6 +853,7 @@ int main(int argc, char* argv[]) {
     }
   } else {
     char* filename = argv[1];
+    assert(endsWith(filename, ".stc"), "File must have \".stc\" extension.");
     FILE *source;
     source = fopen(filename, "r");
 

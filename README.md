@@ -10,9 +10,11 @@ If anyone stumbles upon this and has any feedback/bug reports, feel free to open
 
 Minimally you only need to download `stackc.c` and compile it with a C compiler. Then, you can run the executable with your program name as the argument. Or alternatively, you can just run a short script with a `-s` flag in front as shown. This short script would be identical to an actutal `.stc` file except it does not accept newline as spacing.
 
+The program name must have an extension of ".stc".
+
 ```
 gcc stackc.c -o stackc
-./stackc your_program
+./stackc your_program.stc
 ./stackc -s "if 0 then 45 emit elseif 1 then 43 emit end" -- prints `+` to stdout
 ```
 
@@ -346,11 +348,11 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 
 ## TODO
 
+- import/include files so we can actually import and use the stdlib.stc!!!
 - `stackc.c` debug flag to print stack after each operation
 - Bitwise operations
 - Rule 110 program
 - read input?
 
+- simple type system (int, char, string, everything on the stack has a type)
 - have access to a second stack?
-
-import/include files so we can actually import and use the stdlib.stc!!!
