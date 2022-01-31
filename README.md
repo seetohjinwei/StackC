@@ -14,7 +14,7 @@ The program name must have an extension of ".stc".
 
 ```
 gcc stackc.c -o stackc
-./stackc your_program.stc
+./stackc <your_program>.stc
 ./stackc -s "if 0 then 45 emit elseif 1 then 43 emit end" -- prints `+` to stdout
 ```
 
@@ -356,3 +356,10 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 
 - simple type system (int, char, string, everything on the stack has a type)
 - have access to a second stack?
+
+- meta-evaluator (stackc being able to evaluate stackc)
+- compile stackc file into executable
+
+stdlib:
+- print in stdlib instead (its there but I'll remove it from primitive after include)
+- reverseN

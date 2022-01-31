@@ -9,3 +9,5 @@
 "ABC" print
 
 "\n\n\t\\\n" print
+
+"-- comment in a string\n" print

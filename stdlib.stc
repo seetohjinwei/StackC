@@ -1,0 +1,111 @@
+-- The standard library for StackC
+
+def dup2 -- A, B -> A, B, A, B
+  over over
+enddef
+
+def rot3 -- A, B, C -> C, A, B
+  rot rot
+enddef
+
+-- haven't removed as a primitive
+def print2
+  while dup 0 > then
+    1 -
+    swap emit
+  end
+  drop drop
+enddef
+
+def reverseN -- n ints, n -> n ints
+  "not possible without an additional stack?" print
+enddef
+
+def cr -- None -> None
+  "\n" print
+enddef
+
+-- peek operation
+def , -- int -> int
+  dup .
+enddef
+
+-- MATH OPERATIONS (math library) --
+
+def sumN -- n ints, n -> int
+  0
+  while swap dup 0 > then
+    1 -
+    swap rot +
+  end
+  drop
+enddef
+
+def factorial -- n -> n!
+  1
+  swap
+  while dup 0 > then
+    dup rot *
+    swap 1 -
+  end
+  drop
+enddef
+
+def pow -- a, b -> a^b
+  swap dup
+  while rot dup 1 > then
+    1 -
+    rot rot
+    over *
+  end
+  drop swap drop
+enddef
+
+
+-- TESTS --
+-- temporary because no include yet
+
+if 14 5 pow 537824 = then
+  "14^5 Correct\n" print
+elseif 1 then
+  "14^5 wrong\n" print
+end
+
+if 2 3 pow 8 = then
+  "2^3 Correct\n" print
+elseif 1 then
+  "2^3 wrong\n" print
+end
+
+if 26 7 pow 8031810176 = then
+  "26^7 Correct\n" print
+elseif 1 then
+  "26^7 wrong\n" print
+end
+
+"ABC" print2
+"\nnew line\t\n\\\n" print2
+
+if 1 2 3 3 sumN 6 = then
+  "1 2 3 3 sumN Correct\n" print
+elseif 1 then
+  "1 2 3 3 sumN wrong\n" print
+end
+
+if 123 456 789 0 4 sumN 1368 = then
+  "123 456 789 0 4 sumN Correct\n" print
+elseif 1 then
+  "123 456 789 0 4 sumN wrong\n" print
+end
+
+if 5 factorial 120 = then
+  "5 factorial Correct\n" print
+elseif 1 then
+  "5 factorial wrong\n" print
+end
+
+if 12 factorial 479001600 = then
+  "12 factorial Correct\n" print
+elseif 1 then
+  "12 factorial wrong\n" print
+end
