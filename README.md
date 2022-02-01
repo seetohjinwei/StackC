@@ -1,6 +1,6 @@
 # StackC
 
-StackC is a stack-oriented programming language that is inspired by [Forth](https://en.wikipedia.org/wiki/Forth_\(programming_language\)), another stack-oriented programming language.
+StackC is a stack-oriented programming language that is inspired by [Forth](https://en.wikipedia.org/wiki/Forth_\(programming_language\)), another stack-oriented programming language. This language is built entirely for fun!
 
 The interpreter is written in C. Testing framework is written in Python.
 
@@ -8,14 +8,13 @@ If anyone stumbles upon this and has any feedback/bug reports, feel free to open
 
 ## Quick Setup
 
-Minimally you only need to download `stackc.c` and compile it with a C compiler. Then, you can run the executable with your program name as the argument. Or alternatively, you can just run a short script with a `-s` flag in front as shown. This short script would be identical to an actutal `.stc` file except it does not accept newline as spacing.
+Minimally, you only need to download `stackc.c` and compile it with a C compiler. Then, you can run the executable with your program name as the argument.
 
 The program name must have an extension of ".stc".
 
 ```
 gcc stackc.c -o stackc
 ./stackc <your_program>.stc
-./stackc -s "if 0 then 45 emit elseif 1 then 43 emit end" -- prints `+` to stdout
 ```
 
 ## Documentation

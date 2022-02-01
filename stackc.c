@@ -262,8 +262,8 @@ int getHeadIndex(char *word) {
   int headsSize = DEF_SIZE - 1;
   char heads[] = {
     'A','B','C','D','E','F','G','H','I','J','K','L','M','N','O','P','Q','R','S','T','U','V','W','X','Y','Z',
-  'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
-  '0','1','2','3','4','5','6','7','8','9','_'
+    'a','b','c','d','e','f','g','h','i','j','k','l','m','n','o','p','q','r','s','t','u','v','w','x','y','z',
+    '0','1','2','3','4','5','6','7','8','9','_'
   };
   char first = word[0];
   int index;
@@ -804,7 +804,6 @@ int endsWith(char *string, char *ending) {
 /* Main Function */
 int main(int argc, char* argv[]) {
   assert(argc > 1, "Not enough arguments.\nPlease use `./stackc filename` or `./stackc -s \"1 .\"`");
-  int flagShort = strncmp(argv[1], "-s", 2) == 0;
   Queue *instructions = newQueue();
   Stack *stack = newStack();
   Definitions *definitions = newDefinitions();
@@ -812,108 +811,86 @@ int main(int argc, char* argv[]) {
   char word[MAX_WORD_SIZE];
   memset(word, 0, sizeof(word));
 
-  if (flagShort) {
-    assert(argc > 2, "Not enough arguments. Please provide a short script to run.");
-    int current = 1;
-    size_t argvI = 0;
-    size_t wordI = 0;
-    while (current != 0) {
-      current = argv[2][argvI++];
-      if (current == 0 || current == 32) {
-        /* 0 is the EOF character, 32 is space character. */
-        if (wordI == 0) {
-          continue;
-        }
-        Token *token = makeToken(0, argvI - wordI, word);
-        pushQueue(instructions, token);
-        wordI = 0;
-        memset(word, 0, sizeof(word));
-      } else {
-        word[wordI++] = current;
-      }
-    }
-  } else {
-    char* filename = argv[1];
-    assert(endsWith(filename, ".stc"), "File must have \".stc\" extension.");
-    FILE *source;
-    source = fopen(filename, "r");
+  char* filename = argv[1];
+  assert(endsWith(filename, ".stc"), "File must have \".stc\" extension.");
+  FILE *source;
+  source = fopen(filename, "r");
 
-    if (source == NULL) {
-      char *message;
-      asprintf(&message, "File %s not found", filename);
-      assert(source == NULL, message);
-    }
+  if (source == NULL) {
+    char *message;
+    asprintf(&message, "File %s not found", filename);
+    assert(source == NULL, message);
+  }
 
-    /* Parsing input line by line. */
-    char *line = NULL;
-    /* Signed integer, includes new line character. */
-    int row = 0;
-    ssize_t lengthOfLine;
-    size_t len = 0;
-    int parsingString = 0; /* Different behaviour when parsing strings. */
-    while ((lengthOfLine = getline(&line, &len, source)) != -1) {
-      int wordIndex = 0;
-      memset(word, 0, sizeof(word));
-      int lineIndex;
-      for (lineIndex = 0; lineIndex < lengthOfLine; lineIndex++) {
-        char c = line[lineIndex];
-        /* Catch comments and ignore the rest (by exiting for loop). */
-        if (parsingString == 1) {
-          if (c == '\\') {
-            /* Handle Escape Characters */
-            char next = line[++lineIndex];
-            if (next == '\\') {
-              word[wordIndex++] = '\\';
-            } else if (next == 'n') {
-              word[wordIndex++] = '\n';
-            } else if (next == 'r') {
-              word[wordIndex++] = '\r';
-            } else if (next == 't') {
-              word[wordIndex++] = '\t';
-            } else if (next == '"') {
-              word[wordIndex++] = '"';
-            } else if (next == '\'') {
-              word[wordIndex++] = '\'';
-            } else {
-              printf("Ascii of: %d\n", next);
-              assert(0, "Unknown Escape Character ");
-            }
-          } else if (c == '"') {
-            word[wordIndex++] = '\0';
-            parsingString = 0;
-            Token *token = makeToken(row, lineIndex - wordIndex, word);
-            pushQueue(instructions, token);
-            /* We already know this is a string. */
-            token->OP_TYPE = OP_STR;
-            wordIndex = 0;
-            memset(word, 0, sizeof(word));
+  /* Parsing input line by line. */
+  char *line = NULL;
+  /* Signed integer, includes new line character. */
+  int row = 0;
+  ssize_t lengthOfLine;
+  size_t len = 0;
+  int parsingString = 0; /* Different behaviour when parsing strings. */
+  while ((lengthOfLine = getline(&line, &len, source)) != -1) {
+    int wordIndex = 0;
+    memset(word, 0, sizeof(word));
+    int lineIndex;
+    for (lineIndex = 0; lineIndex < lengthOfLine; lineIndex++) {
+      char c = line[lineIndex];
+      /* Catch comments and ignore the rest (by exiting for loop). */
+      if (parsingString == 1) {
+        if (c == '\\') {
+          /* Handle Escape Characters */
+          char next = line[++lineIndex];
+          if (next == '\\') {
+            word[wordIndex++] = '\\';
+          } else if (next == 'n') {
+            word[wordIndex++] = '\n';
+          } else if (next == 'r') {
+            word[wordIndex++] = '\r';
+          } else if (next == 't') {
+            word[wordIndex++] = '\t';
+          } else if (next == '"') {
+            word[wordIndex++] = '"';
+          } else if (next == '\'') {
+            word[wordIndex++] = '\'';
           } else {
-            assert(wordIndex < MAX_WORD_SIZE, "Word is too long!");
-            word[wordIndex++] = c;
+            printf("Ascii of: %d\n", next);
+            assert(0, "Unknown Escape Character ");
           }
         } else if (c == '"') {
-          /* word[wordIndex++] = c; */
-          parsingString = 1;
-        } else if (c == '-' && lineIndex < lengthOfLine - 1 && line[lineIndex+1] == '-') {
-          break;
-        } else if (c == ' ' || c == '\n') {
-          if (wordIndex == 0) {
-            /* Skipping multiple spaces. */
-            continue;
-          }
+          word[wordIndex++] = '\0';
+          parsingString = 0;
           Token *token = makeToken(row, lineIndex - wordIndex, word);
           pushQueue(instructions, token);
+          /* We already know this is a string. */
+          token->OP_TYPE = OP_STR;
           wordIndex = 0;
           memset(word, 0, sizeof(word));
         } else {
           assert(wordIndex < MAX_WORD_SIZE, "Word is too long!");
           word[wordIndex++] = c;
         }
+      } else if (c == '"') {
+        /* word[wordIndex++] = c; */
+        parsingString = 1;
+      } else if (c == '-' && lineIndex < lengthOfLine - 1 && line[lineIndex+1] == '-') {
+        break;
+      } else if (c == ' ' || c == '\n') {
+        if (wordIndex == 0) {
+          /* Skipping multiple spaces. */
+          continue;
+        }
+        Token *token = makeToken(row, lineIndex - wordIndex, word);
+        pushQueue(instructions, token);
+        wordIndex = 0;
+        memset(word, 0, sizeof(word));
+      } else {
+        assert(wordIndex < MAX_WORD_SIZE, "Word is too long!");
+        word[wordIndex++] = c;
       }
-      row++;
     }
-    fclose(source);
+    row++;
   }
+  fclose(source);
 
   while (!isEmptyQueue(instructions)) {
     parseQueue(stack, instructions, definitions, pollQueue(instructions));
