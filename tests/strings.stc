@@ -11,3 +11,5 @@
 "\n\n\t\\\n" print
 
 "-- comment in a string\n" print
+
+"\"Quotes are great\", bob\'s single quotes are also supported!\r\n" print

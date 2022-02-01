@@ -179,7 +179,7 @@ The string size will be at the top of the stack, followed by `n` characters in a
 
 `print` pops a string off the stack and prints it to standard output.
 
-Multi-line strings are not directly supported. However you can use `\n` and `\t` for a new line and tab respectively. `\\` to escape the backslash.
+Multi-line strings are not directly supported. However you can use `\n` for a new line.
 
 ```
 "Hello World\n" print
@@ -195,6 +195,16 @@ will print the following to the standard output
 Hello World
 This is    tabbed!ABC
 ```
+
+| Escape Characters | Character |
+| --- | --- |
+| `\n` | New line |
+| `\r` | Carriage return |
+| `\t` | New tab |
+| `\"` | Double quotes |
+| `\'` | Single quotes |
+| `\\` | Backslash |
+
 
 ### Stack Manipulation
 

@@ -388,37 +388,19 @@ void parseSTR(PARSE_FUNC_TYPE) {
   int size = 0;
   int i;
   char current;
-  int escapeCharacter = 0;
   int hasEnd = 0;
-  for (i = 1; i < MAX_WORD_SIZE; i++) {
+  for (i = 0; i < MAX_WORD_SIZE; i++) {
     current = word[i];
-    if (current == '"') {
+    if (current == '\0') {
+      pushStack(stack, 0);
       hasEnd = 1;
       break;
-    } else if (escapeCharacter == 1) {
-      escapeCharacter = 0;
-      /* Escape Characters */
-      if (current == '\\') {
-        pushStack(chars, '\\');
-        size++;
-      } else if (current == 'n') {
-        pushStack(chars, '\n');
-        size++;
-      } else if (current == 't') {
-        pushStack(chars, '\t');
-        size++;
-      } else {
-        assertWithToken(0, "Invalid escape character.", token);
-      }
-    } else if (current == '\\') {
-      escapeCharacter = 1;
     } else {
       pushStack(chars, current);
       size++;
     }
   }
   assertWithToken(hasEnd == 1, "String has no NULL terminating character.", token);
-  pushStack(stack, 0);
   while (!isEmptyStack(chars)) {
     current = popStack(chars);
     pushStack(stack, current);
@@ -789,8 +771,7 @@ Token* makeToken(int row, int col, char *word) {
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;
     token->value = atoi(word);
-  } else if (isString(word)) {
-    token->OP_TYPE = OP_STR;
+    /* isString is overridden anyways. */
   } else {
     int i;
     for (i = 0; i < OPS_COUNT; i++) {
@@ -878,11 +859,32 @@ int main(int argc, char* argv[]) {
         char c = line[lineIndex];
         /* Catch comments and ignore the rest (by exiting for loop). */
         if (parsingString == 1) {
-          if (c == '"') {
-            word[wordIndex++] = c;
+          if (c == '\\') {
+            /* Handle Escape Characters */
+            char next = line[++lineIndex];
+            if (next == '\\') {
+              word[wordIndex++] = '\\';
+            } else if (next == 'n') {
+              word[wordIndex++] = '\n';
+            } else if (next == 'r') {
+              word[wordIndex++] = '\r';
+            } else if (next == 't') {
+              word[wordIndex++] = '\t';
+            } else if (next == '"') {
+              word[wordIndex++] = '"';
+            } else if (next == '\'') {
+              word[wordIndex++] = '\'';
+            } else {
+              printf("Ascii of: %d\n", next);
+              assert(0, "Unknown Escape Character ");
+            }
+          } else if (c == '"') {
+            word[wordIndex++] = '\0';
             parsingString = 0;
             Token *token = makeToken(row, lineIndex - wordIndex, word);
             pushQueue(instructions, token);
+            /* We already know this is a string. */
+            token->OP_TYPE = OP_STR;
             wordIndex = 0;
             memset(word, 0, sizeof(word));
           } else {
@@ -890,7 +892,7 @@ int main(int argc, char* argv[]) {
             word[wordIndex++] = c;
           }
         } else if (c == '"') {
-          word[wordIndex++] = c;
+          /* word[wordIndex++] = c; */
           parsingString = 1;
         } else if (c == '-' && lineIndex < lengthOfLine - 1 && line[lineIndex+1] == '-') {
           break;
