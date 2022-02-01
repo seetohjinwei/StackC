@@ -343,11 +343,11 @@ void jumpTo(Stack* stack, Queue* instructions, Definitions* definitions, int *ju
   while (!isEmptyQueue(instructions)) {
     Token *token = peekQueue(instructions)->token;
     int type = token->OP_TYPE;
-    int i;
     if (type == OP_IF || type == OP_WHILE) {
       parseQueue(stack, instructions, definitions, pollQueue(instructions));
       pollQueue(instructions);
     }
+    int i;
     for (i = 0; i < jumpPointsSize; i++) {
       if (type == jumpPoints[i]) {
         return;
@@ -385,10 +385,9 @@ void parseSTR(PARSE_FUNC_TYPE) {
   /* The string size will be at the top of the stack, followed by `n` characters in ascii and then the terminating NULL character. */
   char *word = token->word;
   Stack *chars = newStack();
-  int size = 0;
-  int i;
+  int hasEnd = 0, size = 0;
   char current;
-  int hasEnd = 0;
+  int i;
   for (i = 0; i < MAX_WORD_SIZE; i++) {
     current = word[i];
     if (current == '\0') {
@@ -611,14 +610,13 @@ void parseWHILE(PARSE_FUNC_TYPE) {
     }
     pushQueue(loopInstructions, token);
   }
-  int truth;
   while (1) {
     /* Evaluate evalInstuctions. */
     Queue *evalQueue = copyQueue(evalInstructions);
     while (!isEmptyQueue(evalQueue)) {
       parseQueue(stack, evalQueue, definitions, pollQueue(evalQueue));
     }
-    truth = popStack(stack);
+    int truth = popStack(stack);
     if (truth == 0) {
       break;
     }
@@ -645,8 +643,8 @@ int validateWordName(char *word) {
     return 1;
   }
   /* no character in the word can be any of these */
-  char invalidChars[] = {'"'};
-  int invalidCharsSize = 1;
+  #define invalidCharsSize 2
+  char invalidChars[invalidCharsSize] = {'"', '\''};
   char *w = word;
   while (*w != '\0') {
     int i;
@@ -665,10 +663,9 @@ void parseDEFWORD(PARSE_FUNC_TYPE) {
   assertWithToken(wordNameToken->OP_TYPE == OP_UNKNOWN, "Word must not be defined before.", wordNameToken);
   char *wordName = wordNameToken->word;
   assertWithToken(validateWordName(wordName) == 1, "Word name contains invalid characters.", wordNameToken);
-  int hasEndDef = 0;
+  int hasEndDef = 0, type;
   Queue *block = newQueue();
   Token *defToken;
-  int type;
   while (!isEmptyQueue(instructions)) {
     defToken = pollQueue(instructions)->token;
     type = defToken->OP_TYPE;
