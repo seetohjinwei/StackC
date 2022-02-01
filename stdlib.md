@@ -25,8 +25,10 @@ Some common (or not so common) mathematical operations. StackC does not support 
 | --- | --- |
 | `abs` | a -> \|a\| |
 | `factorial` | n -> n! |
+| `gcd` | a, b -> gcd(a, b) |
 | `min` | a, b -> min(a, b) |
 | `max` | a, b -> max(a, b) |
+| `neg` | a -> -a |
 | `pow` | a, b -> a^b |
 | `sumN` | Pops `n` then sums up the next `n` integers of the stack. |
 

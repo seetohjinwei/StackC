@@ -1,9 +1,9 @@
 def , dup . enddef
 
 -- FizzBuzz from 1 to 100
-def FIB_MAX 100 enddef -- using as a constant
+def FIZZ_MAX 100 enddef -- using as a constant
 1
-while dup FIB_MAX <= then
+while dup FIZZ_MAX <= then
   if dup 15 % 0 = then
     "FizzBuzz\n" print
   elseif dup 3 % 0 = then

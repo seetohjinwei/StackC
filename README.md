@@ -294,6 +294,8 @@ while x <= 100:
 
 It is possible to define custom words, which is useful for repeated operations. It is also possible to define "constants" this way as well, however, at the moment, the interpreter does not optimise for this.
 
+Do note that recursion is not supported. Weird things may happen.
+
 `def <wordname> <word body> enddef`
 
 After the definition of the custom word, every other occurrence of a word is effectively replaced by the word body.
@@ -304,7 +306,7 @@ The following program computes the nth fibonaci number (this is what I came up w
 
 ```
 -- duplicates top 2 elements
-def dup2 -- int, int -> int, int, int, int
+def dup2 -- A, B -> A, B, A, B
   over over
 enddef
 
@@ -361,14 +363,21 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 
 ## TODO
 
+- re-write parsing for if-elseif-end while-end def-end
+- simple type system (int, char, string, everything on the stack has a type)
+- every object is type-value-...-values
+- 'A' to register a character
+
+- break statement to jump to the end
 - import/include files so we can actually import and use the stdlib.stc!!!
+- get nth element of the stack
 - `stackc.c` debug flag to print stack after each operation
 - Bitwise operations
 - Rule 110 program
 - read input?
 
-- simple type system (int, char, string, everything on the stack has a type)
 - have access to a second stack?
+- string manipulation words
 
 - meta-evaluator (stackc being able to evaluate stackc)
 - compile stackc file into executable

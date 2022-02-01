@@ -32,6 +32,10 @@ enddef
 
 -- MATH OPERATIONS (math library) --
 
+def neg -- a -> -a
+  0 swap -
+enddef
+
 def sumN -- n ints, n -> int
   0
   while swap dup 0 > then
@@ -63,7 +67,7 @@ enddef
 
 def abs -- a -> |a|
   if dup 0 < then
-    0 swap -
+    neg
   end
 enddef
 
@@ -81,6 +85,14 @@ def min -- a, b -> max(a, b)
   elseif 1 then
     swap drop
   end
+enddef
+
+-- using Euclidean algorithm (supports negative numbers)
+def gcd
+  while dup then
+    swap over %
+  end
+  drop abs
 enddef
 
 
@@ -141,3 +153,6 @@ end
 
 1 2 min . cr
 2 1 min . cr
+
+1071 462 gcd . cr -- 21
+-531 789 gcd . cr -- 3
