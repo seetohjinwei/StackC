@@ -1,23 +1,26 @@
--- The standard library for StackC
+// The standard library for StackC
 
-def dup2 -- A, B -> A, B, A, B
+def false 0 enddef
+def true 1 enddef
+
+def dup2 // A, B -> A, B, A, B
   over over
 enddef
 
-def rot3 -- A, B, C -> C, A, B
+def rot3 // A, B, C -> C, A, B
   rot rot
 enddef
 
-def cr -- None -> None
+def cr // None -> None
   "\n" print
 enddef
 
--- peek operation
-def , -- int -> int
+// peek operation
+def , // int -> int
   dup .
 enddef
 
--- haven't removed as a primitive
+// haven't removed as a primitive
 def print2
   while dup 0 > then
     1 -
@@ -26,17 +29,17 @@ def print2
   drop drop
 enddef
 
-def reverseN -- n ints, n -> n ints
+def reverseN // n ints, n -> n ints
   "not possible without an additional stack?" print
 enddef
 
--- MATH OPERATIONS (math library) --
+// MATH OPERATIONS (math library) //
 
-def neg -- a -> -a
+def neg // a -> -a
   0 swap -
 enddef
 
-def sumN -- n ints, n -> int
+def sumN // n ints, n -> int
   0
   while swap dup 0 > then
     1 -
@@ -45,9 +48,8 @@ def sumN -- n ints, n -> int
   drop
 enddef
 
-def factorial -- n -> n!
-  1
-  swap
+def factorial // n -> n!
+  1 swap
   while dup 0 > then
     dup rot *
     swap 1 -
@@ -55,7 +57,7 @@ def factorial -- n -> n!
   drop
 enddef
 
-def pow -- a, b -> a^b
+def pow // a, b -> a^b
   swap dup
   while rot dup 1 > then
     1 -
@@ -65,13 +67,13 @@ def pow -- a, b -> a^b
   drop swap drop
 enddef
 
-def abs -- a -> |a|
+def abs // a -> |a|
   if dup 0 < then
     neg
   end
 enddef
 
-def max -- a, b -> max(a, b)
+def max // a, b -> max(a, b)
   if dup2 > then
     drop
   elseif 1 then
@@ -79,7 +81,7 @@ def max -- a, b -> max(a, b)
   end
 enddef
 
-def min -- a, b -> max(a, b)
+def min // a, b -> max(a, b)
   if dup2 < then
     drop
   elseif 1 then
@@ -87,8 +89,8 @@ def min -- a, b -> max(a, b)
   end
 enddef
 
--- using Euclidean algorithm (supports negative numbers)
-def gcd
+// using Euclidean algorithm (supports negative numbers)
+def gcd // a, b -> gcd(a, b)
   while dup then
     swap over %
   end
@@ -96,8 +98,8 @@ def gcd
 enddef
 
 
--- TESTS --
--- temporary because no include yet
+// -- TESTS -- //
+// temporary because no include yet
 
 if 14 5 pow 537824 = then
   "14^5 Correct\n" print
@@ -154,5 +156,5 @@ end
 1 2 min . cr
 2 1 min . cr
 
-1071 462 gcd . cr -- 21
--531 789 gcd . cr -- 3
+1071 462 gcd . cr // 21
+-531 789 gcd . cr // 3
