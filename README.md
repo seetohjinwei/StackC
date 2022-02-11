@@ -350,21 +350,34 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 
 ### Quick Usage of Tests
 
-`gcc -o test test.c && ./test -a`
+If you downloaded the `Makefile`, just run `make`.
+
+Else you can run the tester manually, `gcc -o test test.c && ./test -d tests`
 
 ### Flags
 
+Flags must be declared before the directory/files.
+
 | Flag | Description |
 | --- | --- |
-| `a` | Runs all tests. |
+| `d` | Runs all tests in specified directory after flags. Only one directory is allowed. |
 | `u` | Creates (if it does not exist) and updates all `.o` files with the current `.stc` stdout. |
-| `v` | Verbose output. Logs standard output of the evaluation. |
+| `v` | Verbose output. Logs standard output of the evaluation and some debug information. |
 
-`./test -a` -> runs all tests
+`./test -d tests` -> runs all tests
 
-`./test -av` -> runs all tests with verbose output
+`./test -dv tests` or `./test -d -v tests` -> runs all tests with verbose output
 
-`./test popping` -> runs `popping.stc` and compares with `popping.o`
+`./test tests/if tests/while` -> runs `tests/if.stc` and compares with `tests/if.o` and same with `while`
+
+### Makefile Arguments
+
+| Command | Description |
+| --- | --- |
+| no arguments | Runs all tests in `tests` directory. |
+| `verbose` | Runs all tests in `tests` directory with verbose output. |
+| `update` | Updates all expected files with current output. |
+| `clean` | Cleans up `stackc` and `test` executables. |
 
 ## TODO
 
