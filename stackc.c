@@ -1,10 +1,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #define DEF_SIZE 64
 #define MAX_WORD_SIZE 1024
 #define PARSE_FUNC_TYPE Stack* stack, Queue* instructions, Definitions* definitions, Token* token
+
+static char *thisName;
 
 typedef enum OPS {
   OP_UNKNOWN,
@@ -94,7 +97,7 @@ typedef struct DefWord {
 
 /* Print Token for debugging. */
 void printToken(Token* token) {
-  fprintf(stderr, "-- Token --\n");
+  fprintf(stderr, "-- [%s] Token --\n", thisName);
   fprintf(stderr, "Position: %d %d\n", token->row, token->col);
   fprintf(stderr, "OP_TYPE: %d\n", token->OP_TYPE);
   fprintf(stderr, "Value: %d\n", token->value);
@@ -104,7 +107,7 @@ void printToken(Token* token) {
 /* Assert with Token. */
 int assertWithToken(int truth, char *message, Token* token) {
   if (truth == 0) {
-    fprintf(stderr, "Assertion Error: %s\n", message);
+    fprintf(stderr, "[%s] Assertion Error: %s\n", thisName, message);
     if (token != NULL) {
       printToken(token);
     }
@@ -808,6 +811,7 @@ int endsWith(char *string, char *ending) {
 
 /* Main Function */
 int main(int argc, char* argv[]) {
+  thisName = argv[0];
   assert(argc > 1, "Not enough arguments.\nUsage: `./stackc filename`");
   Queue *instructions = newQueue();
   Stack *stack = newStack();
@@ -818,12 +822,18 @@ int main(int argc, char* argv[]) {
 
   char* filename = argv[1];
   assert(endsWith(filename, ".stc"), "File must have \".stc\" extension.");
+
+  if (access(filename, R_OK) != 0) {
+    /* Checks for read permission for programFile. */
+    fprintf(stderr, "[%s] StackC Program File `%s` not found.\n", thisName, filename);
+    return 1;
+  }
   FILE *source;
   source = fopen(filename, "r");
 
   if (source == NULL) {
     char *message;
-    asprintf(&message, "File %s not found", filename);
+    asprintf(&message, "[%s] StackC Program File %s not found.", thisName, filename);
     assert(source == NULL, message);
   }
 
@@ -858,7 +868,7 @@ int main(int argc, char* argv[]) {
           } else if (next == '\'') {
             word[wordIndex++] = '\'';
           } else {
-            printf("Ascii of: %d\n", next);
+            fprintf(stderr, "[%s] Ascii of: %d\n", thisName, next);
             assert(0, "Unknown Escape Character");
           }
         } else if (c == '"') {

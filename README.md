@@ -13,7 +13,7 @@ Minimally, you only need to download `stackc.c` and compile it with a C compiler
 The program name must have an extension of ".stc".
 
 ```
-gcc stackc.c -o stackc
+gcc -o stackc stackc.c
 ./stackc <your_program>.stc
 ```
 
@@ -145,7 +145,7 @@ The following words will print into standard output. Will have an error if the o
 | --- | --- |
 | `.` | pops from the top of the stack, removing it, printing the integer. |
 | `emit` | similar to `.` but prints the ASCII equivalent instead. |
-| `.s` | prints the size of the current stack. |
+| `.s` | prints the size of the current stack. Intended to be used for debugging interpreter. |
 
 ```
 65 1 2 3
@@ -294,7 +294,7 @@ while x <= 100:
 
 It is possible to define custom words, which is useful for repeated operations. It is also possible to define "constants" this way as well, however, at the moment, the interpreter does not optimise for this.
 
-Do note that recursion is not supported. Weird things may happen.
+Do note that recursion is not supported. Weird things may happen (probably segfault). StackC *may* support recursion in the future, depending on how hard it is to implement.
 
 `def <wordname> <word body> end`
 
@@ -388,6 +388,7 @@ Do not include `.stc` when denoting the program.
 - simple type system (int, char, string, everything on the stack has a type)
 - every object is type-value-...-values
 - 'A' to register a character
+- write tests/push.stc test for char pushing
 
 - break statement to jump to the end
 - import/include files so we can actually import and use the stdlib.stc!!!
@@ -399,6 +400,7 @@ Do not include `.stc` when denoting the program.
 - brainfk interpreter
 - read input?
 - floats?
+- recursion?
 
 - have access to a second stack?
 - string manipulation words
