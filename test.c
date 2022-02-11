@@ -188,6 +188,8 @@ int main(int argc, char* argv[]) {
         updateTest(arg);
       } else if (runTest(arg)) {
         passed++;
+      } else {
+        fprintf(stderr, "[%s] %s failed.\n", thisName, arg);
       }
     }
     if (tests == 0) {
@@ -228,6 +230,8 @@ int main(int argc, char* argv[]) {
           updateTest(fileWithDir);
         } else if (runTest(fileWithDir)) {
           passed++;
+        } else {
+          fprintf(stderr, "[%s] %s failed.\n", thisName, fileWithDir);
         }
       }
     }
