@@ -1,14 +1,24 @@
 CC = gcc
 CFLAGS = -Wall
-.PHONY: run_script
+CFLAGS_FULL = -Wall -Wextra -pedantic
+.PHONY: run_tests
 
-all: stackc run_script
+default: run_tests
 
-run_script:
-	./test.py
+verbose: stackc test
+	./test -dv tests
+
+update: stackc test
+	./test -du tests
+
+run_tests: stackc test
+	./test -d tests
 
 stackc: stackc.c
-	$(CC) $(CFLAGS) stackc.c -o stackc
+	$(CC) $(CFLAGS) -o stackc stackc.c
+
+test: test.c
+	$(CC) $(CFLAGS_FULL) -o test test.c
 
 clean:
-	rm stackc
+	rm stackc test
