@@ -350,7 +350,7 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 
 ### Quick Usage of Tests
 
-`./test.py` or `python3 test.py`
+`gcc -o test test.c && ./test`
 
 ### Flags
 
@@ -359,16 +359,16 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 | `f` | Creates (if it does not exist) and updates all `.o` files with the current `.stc` stdout. |
 | `v` | Verbose output. Displays stdout of the evaluation when there is a non-zero exit code. |
 
-`./test.py -f` or `./test.py -fv`
+`./test -f` or `./test -fv`
 
 ## TODO
 
-- re-write parsing for if-elseif-end while-end def-end (some form of jump point system, instead of computing end multiple times)
+- re-write `test.py` testing framework in C
+
 - simple type system (int, char, string, everything on the stack has a type)
 - every object is type-value-...-values
 - 'A' to register a character
 - use stderr instead of stdout when logging errors
-- re-write `test.py` testing framework in C
 
 - break statement to jump to the end
 - import/include files so we can actually import and use the stdlib.stc!!!
@@ -376,6 +376,8 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 - `stackc.c` debug flag to print stack after each operation
 - Bitwise operations
 - Rule 110 program
+- Game of life
+- brainfk interpreter
 - read input?
 - floats?
 
