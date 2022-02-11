@@ -342,10 +342,11 @@ void jumpTo(Stack* stack, Queue* instructions, Definitions* definitions, int *ju
   while (!isEmptyQueue(instructions)) {
     Token *token = peekQueue(instructions)->token;
     int type = token->OP_TYPE;
-    /* if (type == OP_IF || type == OP_WHILE) { */
-    /*   parseQueue(stack, instructions, definitions, pollQueue(instructions)); */
-    /*   pollQueue(instructions); */
-    /* } */
+    assertWithToken(type != OP_DEF, "`def` must be on highest level", token);
+    if (type == OP_IF || type == OP_WHILE) {
+      parseQueue(stack, instructions, definitions, pollQueue(instructions));
+      pollQueue(instructions);
+    }
     int i;
     for (i = 0; i < jumpPointsSize; i++) {
       if (type == jumpPoints[i]) {
@@ -536,11 +537,13 @@ void parseIF(PARSE_FUNC_TYPE) {
   }
   assertWithToken(startType == OP_IF || startType == OP_ELSEIF, "controlIf must be called with `if` or `elseif` token", token);
   /* Evaluate until `then` keyword */
-  int hasThen = 0;
+  int hasThen = 0, type;
   while (!isEmptyQueue(instructions)) {
     QueueElem *queueElem = pollQueue(instructions);
     Token *current = queueElem->token;
-    if (current->OP_TYPE == OP_THEN) {
+    type = current->OP_TYPE;
+    assertWithToken(type != OP_DEF, "No `def` in if", token);
+    if (type == OP_THEN) {
       hasThen = 1;
       break;
     }
@@ -555,11 +558,13 @@ void parseIF(PARSE_FUNC_TYPE) {
     Token* next = pollQueue(instructions)->token;
     parseIF(stack, instructions, definitions, next);
   } else {
-    int hasEnd = 0;
+    int hasEnd = 0, type;
     while (!isEmptyQueue(instructions)) {
       QueueElem *queueElem = pollQueue(instructions);
       Token *current = queueElem->token;
-      if (current->OP_TYPE == OP_ELSEIF) {
+      type = current->OP_TYPE;
+      assertWithToken(type != OP_DEF, "No `def` in if", token);
+      if (type == OP_ELSEIF) {
         jumpToEnd(stack, instructions, definitions);
         /* Poll `end` word off. */
         current = pollQueue(instructions)->token;
@@ -599,6 +604,7 @@ void parseWHILE(PARSE_FUNC_TYPE) {
     elem = pollQueue(instructions);
     token = elem->token;
     type = token->OP_TYPE;
+    assertWithToken(type != OP_DEF, "No `def` in while loop", token);
     if (type == OP_IF || type == OP_WHILE) {
       ends++;
     } else if (type == OP_END) {
@@ -658,19 +664,23 @@ int validateWordName(char *word) {
 }
 
 void parseDEF(PARSE_FUNC_TYPE) {
-  /* FIX: Change to `end` instead of `enddef` */
   Token *wordNameToken = pollQueue(instructions)->token;
   assertWithToken(wordNameToken->OP_TYPE == OP_UNKNOWN, "Word must not be defined before.", wordNameToken);
   char *wordName = wordNameToken->word;
   assertWithToken(validateWordName(wordName) == 1, "Word name contains invalid characters.", wordNameToken);
-  int hasEnd = 0, type;
+  int ends = 1, hasEnd = 0, type;
   Queue *block = newQueue();
   Token *defToken;
   while (!isEmptyQueue(instructions)) {
     defToken = pollQueue(instructions)->token;
     type = defToken->OP_TYPE;
     assertWithToken(type != OP_DEF, "No nested `def`", defToken);
-    if (type == OP_END) {
+    if (type == OP_IF || type == OP_WHILE) {
+      ends++;
+    } else if (type == OP_END) {
+      ends--;
+    }
+    if (ends == 0) {
       hasEnd = 1;
       break;
     }
@@ -870,7 +880,7 @@ int main(int argc, char* argv[]) {
           /* Skipping multiple spaces. */
           continue;
         }
-        Token *token = makeToken(row, lineIndex - wordIndex, word);
+        Token *token = makeToken(row + 1, lineIndex - wordIndex + 1, word);
         pushQueue(instructions, token);
         wordIndex = 0;
         memset(word, 0, sizeof(word));

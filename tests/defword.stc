@@ -7,11 +7,9 @@ end
 
 // nth fibonacci number
 def fib // int -> int
-  "Fib\n" print
   1 -
   0 1 rot
   while dup 0 > then
-    "While\n" print
     rot rot
     dup2 + rot drop
     rot 1 -
@@ -19,8 +17,8 @@ def fib // int -> int
   drop drop
 end
 
-// 10 fib .
-// 29 fib .
+10 fib .
+29 fib .
 
 def sum3 + + end
 1 2 3 sum3 .
