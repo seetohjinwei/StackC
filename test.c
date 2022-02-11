@@ -6,14 +6,16 @@
 
 #define IN_EXT ".stc"
 #define OUT_EXT ".o"
-#define TEST_DIR "tests/"
+#define printUsage fprintf(stderr, "Usage: `%s [-duv] [directory]` or `%s [-uv] [files...]\n", thisName, thisName)
 
 /* Run tests on all files. */
-static int allFiles = 0;
+static int testDirectory = 0;
 /* Updates all the output files. */
 static int forceUpdate = 0;
 /* Logs standard output. */
 static int verboseOutput = 0;
+
+static char *thisName;
 
 int compareFiles(FILE *, FILE *);
 int chopEnd(char *, char *);
@@ -43,16 +45,21 @@ int compareFiles(FILE *program, FILE *expected) {
 
 int runTest(char* fileName) {
   if (verboseOutput != 0) {
-    fprintf(stdout, "\n\nTesting %s:\n", fileName);
+    fprintf(stdout, "\n[%s] Testing %s:\n", thisName, fileName);
   }
 
   FILE *program, *expected;
-
-  char *command;
-  asprintf(&command, "./stackc %s%s 2>&1", fileName, IN_EXT);
+  char *command, *programFile;
+  asprintf(&programFile, "%s%s", fileName, IN_EXT);
+  if (access(programFile, R_OK) != 0) {
+    /* Checks for read permission for programFile. */
+    fprintf(stderr, "StackC Program File `%s%s` not found.\n", fileName, IN_EXT);
+    return 0;
+  }
+  asprintf(&command, "./stackc %s 2>&1", programFile);
   program = popen(command, "r");
   if (program == NULL) {
-    fprintf(stderr, "StackC Program File `%s%s` not found.\n", fileName, IN_EXT);
+    fprintf(stderr, "Something went wrong executing StackC Program File `%s%s`.\n", fileName, IN_EXT);
     return 0;
   }
 
@@ -98,49 +105,84 @@ int chopEnd(char *string, char *ending) {
 }
 
 int main(int argc, char* argv[]) {
+  thisName = argv[0];
   int opt;
-  while ((opt = getopt(argc, argv, "afv")) != -1) {
+  while ((opt = getopt(argc, argv, "duv")) != -1) {
     switch (opt) {
-      case 'a': allFiles = 1; break;
-      case 'f': forceUpdate = 1; break;
+      case 'd': testDirectory = 1; break;
+      case 'u': forceUpdate = 1; break;
       case 'v': verboseOutput = 1; break;
-      default: exit(1);
+      default:
+        printUsage;
+        exit(1);
     }
   }
 
-  if (allFiles == 0) {
-    return 0;
+  if (verboseOutput != 0) {
+    printf("testDirectory: %d forceUpdate: %d verboseOutput: %d\n", testDirectory, forceUpdate, verboseOutput);
   }
 
-  DIR *d = opendir(TEST_DIR);
-  struct dirent *dir;
-  if (d == NULL) {
-    fprintf(stderr, "Directory %s not found.\n", TEST_DIR);
-    return 1;
-  }
-
-  char *fileName;
   int tests = 0;
   int passed = 0;
 
-
-  while((dir = readdir(d)) != NULL) {
-    fileName = dir->d_name;
-    if (chopEnd(fileName, IN_EXT)) {
-      char *fileWithDir;
-      asprintf(&fileWithDir, "%s%s", TEST_DIR, fileName);
+  if (testDirectory == 0) {
+    int i;
+    for (i = 1; i < argc; i++) {
+      char *arg = argv[i];
+      if (arg[0] == '-') {
+        continue;
+      }
       tests++;
-      if (runTest(fileWithDir)) {
+      if (runTest(arg)) {
         passed++;
       }
     }
-  }
+    if (tests == 0) {
+      printUsage;
+      return 1;
+    }
+  } else {
+    char *testDir = NULL;
+    int i;
+    for (i = 1; i < argc; i++) {
+      char *arg = argv[i];
+      if (arg[0] != '-') {
+        testDir = arg;
+        break;
+      }
+    }
+    if (testDir == NULL) {
+      printUsage;
+      return 1;
+    }
+    /* Add a `/` to the end of testDir. */
+    asprintf(&testDir, "%s/", testDir);
+    DIR *d = opendir(testDir);
+    struct dirent *dir;
+    if (d == NULL) {
+      fprintf(stderr, "Directory %s not found.\n", testDir);
+      return 1;
+    }
 
-  closedir(d);
+    char *fileName;
+    while((dir = readdir(d)) != NULL) {
+      fileName = dir->d_name;
+      if (chopEnd(fileName, IN_EXT)) {
+        char *fileWithDir;
+        asprintf(&fileWithDir, "%s%s", testDir, fileName);
+        tests++;
+        if (runTest(fileWithDir)) {
+          passed++;
+        }
+      }
+    }
+
+    closedir(d);
+  }
 
   fprintf(stdout, "Tests: %d/%d\n", passed, tests);
   if (passed == tests) {
-    fprintf(stdout, "All tests passed! 🎉\n");
+    fprintf(stdout, "\n[%s] All tests passed! 🎉\n", thisName);
   }
 
   return 0;
