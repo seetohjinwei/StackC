@@ -1,0 +1,43 @@
+def dup2 over over end
+
+def isprime
+  if dup 2 = then
+    drop 1
+  elseif dup 2 < then
+    drop 0
+  elseif dup 2 % 0 = then
+    drop 0
+  elseif 1 then
+    1 swap
+    3
+    // change to SQRT eventually (when we have floats?)
+    while over 2 / over > then
+      if dup2 % 0 = then
+        drop drop drop 0 0 0
+      elseif 1 then
+        2 +
+      end
+    end
+    drop drop
+  end
+end
+
+// special case for 2
+2 isprime .
+
+// less than 2
+1 isprime .
+0 isprime .
+-1 isprime .
+
+// even
+58 isprime .
+1248 isprime .
+
+// odd not prime
+1395 isprime .
+
+// prime
+23 isprime .
+239 isprime .
+1249 isprime .

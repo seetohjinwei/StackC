@@ -1,0 +1,15 @@
+def loop
+  2
+  while dup 0 > then
+    "loop\n" print
+    1 -
+  end
+end
+
+if 0 then
+  loop
+elseif 0 then
+  loop
+elseif 1 then
+  loop
+end

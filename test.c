@@ -236,11 +236,11 @@ int main(int argc, char* argv[]) {
   }
 
   if (forceUpdate != 0) {
-    fprintf(stdout, "Done updating.\n");
+    fprintf(stdout, "\nDone updating.\n");
   } else {
-    fprintf(stdout, "Tests: %d/%d\n", passed, tests);
+    fprintf(stdout, "\n[%s] Tests: %d/%d\n", thisName, passed, tests);
     if (passed == tests) {
-      fprintf(stdout, "\n[%s] All tests passed! 🎉\n", thisName);
+      fprintf(stdout, "[%s] All tests passed! 🎉\n", thisName);
     }
   }
 
