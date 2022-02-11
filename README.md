@@ -197,23 +197,23 @@ This is    tabbed!ABC
 
 | Escape Characters | Character |
 | --- | --- |
-| `\n` | New line |
-| `\r` | Carriage return |
-| `\t` | New tab |
 | `\"` | Double quotes |
 | `\'` | Single quotes |
 | `\\` | Backslash |
+| `\n` | New line |
+| `\r` | Carriage return |
+| `\t` | New tab |
 
 
 ### Stack Manipulation
 
 | Word | Description |
 | --- | --- |
-| `dup` | duplicates the first element |
 | `drop` | pops the first element |
-| `swap` | swaps the first two elements |
+| `dup` | duplicates the first element |
 | `over` | duplicates the second element and pushes it to the top |
 | `rot` | rotates the first 3 elements, `1 2 3 rot` -> `2 3 1` |
+| `swap` | swaps the first two elements |
 
 ### Control Flow
 
@@ -350,16 +350,21 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 
 ### Quick Usage of Tests
 
-`gcc -o test test.c && ./test`
+`gcc -o test test.c && ./test -a`
 
 ### Flags
 
 | Flag | Description |
 | --- | --- |
-| `f` | Creates (if it does not exist) and updates all `.o` files with the current `.stc` stdout. |
-| `v` | Verbose output. Displays stdout of the evaluation when there is a non-zero exit code. |
+| `a` | Runs all tests. |
+| `u` | Creates (if it does not exist) and updates all `.o` files with the current `.stc` stdout. |
+| `v` | Verbose output. Logs standard output of the evaluation. |
 
-`./test -f` or `./test -fv`
+`./test -a` -> runs all tests
+
+`./test -av` -> runs all tests with verbose output
+
+`./test popping` -> runs `popping.stc` and compares with `popping.o`
 
 ## TODO
 
