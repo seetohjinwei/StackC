@@ -44,14 +44,14 @@ FYI: Words are hashed by their first character, so that searches are a bit more 
 
 ### Comments
 
-Comments are declared by `--`, every character after `--` is ignored by the interpreter.
+Comments are declared by `//`, every character after `//` is ignored by the interpreter.
 
 ```
--- This is a comment.
--- Anything after `--` is ignored.
--- . . . . .
--- Does not cause stack underflow because it is not ran!
-65 emit -- prints an `A` character
+// This is a comment.
+// Anything after `//` is ignored.
+// . . . . .
+// Does not cause stack underflow because it is not ran!
+65 emit // prints an `A` character
 ```
 
 ```python
@@ -89,11 +89,11 @@ The follow operations pop 2 elements off the stack and push the result back on i
 | `%` | remainder of the two elements |
 
 ```
-1 2 + .  -- prints 3
-9 3 - .  -- prints 6
-5 6 * .  -- prints 30
-50 7 / . -- prints 7
-50 7 % . -- prints 1
+1 2 + .  // prints 3
+9 3 - .  // prints 6
+5 6 * .  // prints 30
+50 7 / . // prints 7
+50 7 % . // prints 1
 ```
 
 ```python
@@ -118,13 +118,13 @@ The following operations pop 2 elements off the stack and push 0 (if false) and 
 | `<` | lesser than |
 
 ```
-1 1 = .    -- prints 1 (true)
-0 1 = .    -- prints 0 (false)
-19 19 >= . -- prints 1 (true)
-20 19 >= . -- prints 1 (true)
-19 5 <= .  -- prints 0 (false)
-2 1 > .    -- prints 1 (true)
-5 5 < .    -- prints 0 (false)
+1 1 = .    // prints 1 (true)
+0 1 = .    // prints 0 (false)
+19 19 >= . // prints 1 (true)
+20 19 >= . // prints 1 (true)
+19 5 <= .  // prints 0 (false)
+2 1 > .    // prints 1 (true)
+5 5 < .    // prints 0 (false)
 ```
 
 ```python
@@ -149,12 +149,12 @@ The following words will print into standard output. Will have an error if the o
 
 ```
 65 1 2 3
-.s   -- prints 4
-.    -- prints 3
-.    -- prints 2
-.    -- prints 1
-emit -- prints `A`
-.s   -- prints 0
+.s   // prints 4
+.    // prints 3
+.    // prints 2
+.    // prints 1
+emit // prints `A`
+.s   // prints 0
 ```
 
 ```python
@@ -213,7 +213,7 @@ This is    tabbed!ABC
 | `drop` | pops the first element |
 | `swap` | swaps the first two elements |
 | `over` | duplicates the second element and pushes it to the top |
-| `rot` | rotates the first 3 elements, `1 2 3 rot . . .` -- prints `1 3 2` |
+| `rot` | rotates the first 3 elements, `1 2 3 rot` -> `2 3 1` |
 
 ### Control Flow
 
@@ -226,16 +226,16 @@ If you want to simulate a regular `else`, as in other languages, just use a `els
 Nested if/else are also supported!
 
 ```
-if 0 then          -- evaluates to false
+if 0 then          // evaluates to false
   12 .
-elseif 1 then      -- evaluates to true
-  if 2 1 - then    -- evaluates to 1 which is true
-    23 .           -- 23 is printed
-  elseif 1 then    -- skipped to jump ahead to the `end` block
+elseif 1 then      // evaluates to true
+  if 2 1 - then    // evaluates to 1 which is true
+    23 .           // 23 is printed
+  elseif 1 then    // skipped to jump ahead to the `end` block
     34 .
   end
 elseif 1 then
-  45 .             -- never evaluated as it is equivalent to placing 2 `else` after one another.
+  45 .             // never evaluated as it is equivalent to placing 2 `else` after one another.
 end
 ```
 
@@ -296,7 +296,7 @@ It is possible to define custom words, which is useful for repeated operations. 
 
 Do note that recursion is not supported. Weird things may happen.
 
-`def <wordname> <word body> enddef`
+`def <wordname> <word body> end`
 
 After the definition of the custom word, every other occurrence of a word is effectively replaced by the word body.
 
@@ -305,13 +305,13 @@ Ideally, one adds in a "function signature" as a comment to denote how many elem
 The following program computes the nth fibonaci number (this is what I came up with but there might be a better way). It is kinda tricky to have to juggle with 3 values in the stack.
 
 ```
--- duplicates top 2 elements
-def dup2 -- A, B -> A, B, A, B
+// duplicates top 2 elements
+def dup2 // A, B -> A, B, A, B
   over over
-enddef
+end
 
--- nth fibonacci number
-def fib -- int -> int
+// nth fibonacci number
+def fib // int -> int
   1 -
   0 1 rot
   while dup 0 > then
@@ -320,9 +320,9 @@ def fib -- int -> int
     rot 1 -
   end
   drop drop
-enddef
+end
 
-29 fib .                -- prints 317811
+29 fib .                // prints 317811
 ```
 
 is equivalent to
@@ -363,10 +363,12 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 
 ## TODO
 
-- re-write parsing for if-elseif-end while-end def-end
+- re-write parsing for if-elseif-end while-end def-end (some form of jump point system, instead of computing end multiple times)
 - simple type system (int, char, string, everything on the stack has a type)
 - every object is type-value-...-values
 - 'A' to register a character
+- use stderr instead of stdout when logging errors
+- re-write `test.py` testing framework in C
 
 - break statement to jump to the end
 - import/include files so we can actually import and use the stdlib.stc!!!
@@ -375,12 +377,16 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 - Bitwise operations
 - Rule 110 program
 - read input?
+- floats?
 
 - have access to a second stack?
 - string manipulation words
 
+- array
+
 - meta-evaluator (stackc being able to evaluate stackc)
-- compile stackc file into executable
+- compile stackc programs into assembly -> executables
+- re-write StackC compiler in StackC
 
 stdlib:
 - print in stdlib instead (its there but I'll remove it from primitive after include)

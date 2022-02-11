@@ -3,8 +3,8 @@
 #include <string.h>
 
 #define DEF_SIZE 64
-#define PARSE_FUNC_TYPE Stack* stack, Queue* instructions, Definitions* definitions, Token* token
 #define MAX_WORD_SIZE 1024
+#define PARSE_FUNC_TYPE Stack* stack, Queue* instructions, Definitions* definitions, Token* token
 
 typedef enum OPS {
   OP_UNKNOWN,
@@ -34,9 +34,8 @@ typedef enum OPS {
   OP_ELSEIF,
   OP_WHILE,
   OP_THEN,
+  OP_DEF,
   OP_END,
-  OP_DEFWORD,
-  OP_ENDDEF,
   OPS_COUNT /* size of enum OPS */
 } OPS;
 
@@ -231,8 +230,8 @@ int pushStack(Stack* stack, int value) {
 }
 
 /* Peek at the first element of the stack. */
-int peekStack(Stack* stack) {
-  assert(!isEmptyStack(stack), "Stack underflow while peeking stack.\n");
+int peekStack(Stack* stack, Token* token) {
+  assertWithToken(!isEmptyStack(stack), "Stack underflow while peeking stack.\n", token);
   return stack->root->value;
 }
 
@@ -343,6 +342,7 @@ void jumpTo(Stack* stack, Queue* instructions, Definitions* definitions, int *ju
   while (!isEmptyQueue(instructions)) {
     Token *token = peekQueue(instructions)->token;
     int type = token->OP_TYPE;
+    assertWithToken(type != OP_DEF, "`def` must be on highest level", token);
     if (type == OP_IF || type == OP_WHILE) {
       parseQueue(stack, instructions, definitions, pollQueue(instructions));
       pollQueue(instructions);
@@ -499,7 +499,7 @@ void parsePRINT(PARSE_FUNC_TYPE) {
 }
 
 void parseDUP(PARSE_FUNC_TYPE) {
-  int top = peekStack(stack);
+  int top = peekStack(stack, token);
   pushStack(stack, top);
 }
 
@@ -516,7 +516,7 @@ void parseSWAP(PARSE_FUNC_TYPE) {
 
 void parseOVER(PARSE_FUNC_TYPE) {
   int a = popStack(stack);
-  int second = peekStack(stack);
+  int second = peekStack(stack, token);
   pushStack(stack, a);
   pushStack(stack, second);
 }
@@ -537,11 +537,13 @@ void parseIF(PARSE_FUNC_TYPE) {
   }
   assertWithToken(startType == OP_IF || startType == OP_ELSEIF, "controlIf must be called with `if` or `elseif` token", token);
   /* Evaluate until `then` keyword */
-  int hasThen = 0;
+  int hasThen = 0, type;
   while (!isEmptyQueue(instructions)) {
     QueueElem *queueElem = pollQueue(instructions);
     Token *current = queueElem->token;
-    if (current->OP_TYPE == OP_THEN) {
+    type = current->OP_TYPE;
+    assertWithToken(type != OP_DEF, "No `def` in if", token);
+    if (type == OP_THEN) {
       hasThen = 1;
       break;
     }
@@ -556,11 +558,13 @@ void parseIF(PARSE_FUNC_TYPE) {
     Token* next = pollQueue(instructions)->token;
     parseIF(stack, instructions, definitions, next);
   } else {
-    int hasEnd = 0;
+    int hasEnd = 0, type;
     while (!isEmptyQueue(instructions)) {
       QueueElem *queueElem = pollQueue(instructions);
       Token *current = queueElem->token;
-      if (current->OP_TYPE == OP_ELSEIF) {
+      type = current->OP_TYPE;
+      assertWithToken(type != OP_DEF, "No `def` in if", token);
+      if (type == OP_ELSEIF) {
         jumpToEnd(stack, instructions, definitions);
         /* Poll `end` word off. */
         current = pollQueue(instructions)->token;
@@ -600,6 +604,7 @@ void parseWHILE(PARSE_FUNC_TYPE) {
     elem = pollQueue(instructions);
     token = elem->token;
     type = token->OP_TYPE;
+    assertWithToken(type != OP_DEF, "No `def` in while loop", token);
     if (type == OP_IF || type == OP_WHILE) {
       ends++;
     } else if (type == OP_END) {
@@ -658,35 +663,36 @@ int validateWordName(char *word) {
   return 1;
 }
 
-void parseDEFWORD(PARSE_FUNC_TYPE) {
+void parseDEF(PARSE_FUNC_TYPE) {
   Token *wordNameToken = pollQueue(instructions)->token;
   assertWithToken(wordNameToken->OP_TYPE == OP_UNKNOWN, "Word must not be defined before.", wordNameToken);
   char *wordName = wordNameToken->word;
   assertWithToken(validateWordName(wordName) == 1, "Word name contains invalid characters.", wordNameToken);
-  int hasEndDef = 0, type;
+  int ends = 1, hasEnd = 0, type;
   Queue *block = newQueue();
   Token *defToken;
   while (!isEmptyQueue(instructions)) {
     defToken = pollQueue(instructions)->token;
     type = defToken->OP_TYPE;
-    assertWithToken(type != OP_DEFWORD, "No nested `def`", defToken);
-    if (type == OP_ENDDEF) {
-      hasEndDef = 1;
+    assertWithToken(type != OP_DEF, "No nested `def`", defToken);
+    if (type == OP_IF || type == OP_WHILE) {
+      ends++;
+    } else if (type == OP_END) {
+      ends--;
+    }
+    if (ends == 0) {
+      hasEnd = 1;
       break;
     }
     pushQueue(block, defToken);
   }
-  assertWithToken(hasEndDef, "`enddef` not found after `def`", token);
+  assertWithToken(hasEnd, "`end` not found after `def`", token);
   addDefinition(definitions, wordName, block);
-}
-
-void parseENDDEF(PARSE_FUNC_TYPE) {
-  assertWithToken(0, "`enddef` without `def`", token);
 }
 
 /* Parses a token. */
 void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, QueueElem* queueElem) {
-  assert(OPS_COUNT == 30, "Update control flow in parse().");
+  assert(OPS_COUNT == 29, "Update control flow in parse().");
   Token *token = queueElem->token;
   void (*parsers[OPS_COUNT]) (PARSE_FUNC_TYPE) = {
     parseUNKNOWN,
@@ -716,9 +722,8 @@ void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, Que
     parseELSEIF,
     parseWHILE,
     parseTHEN,
+    parseDEF,
     parseEND,
-    parseDEFWORD,
-    parseENDDEF,
   };
   parsers[token->OP_TYPE](stack, instructions, definitions, token);
 }
@@ -731,7 +736,7 @@ Token* makeToken(int row, int col, char *word) {
   token->value = 0;
   token->OP_TYPE = OP_UNKNOWN;
   strncpy(token->word, word, MAX_WORD_SIZE);
-  assert(OPS_COUNT == 30, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 29, "Update control flow in makeToken().");
   /* control flow to decide type of operation */
   char *types[OPS_COUNT] = {
     "", /* UNKNOWN */
@@ -761,9 +766,8 @@ Token* makeToken(int row, int col, char *word) {
     "elseif",
     "while",
     "then",
-    "end",
     "def",
-    "enddef",
+    "end",
   };
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;
@@ -800,7 +804,7 @@ int endsWith(char *string, char *ending) {
 
 /* Main Function */
 int main(int argc, char* argv[]) {
-  assert(argc > 1, "Not enough arguments.\nPlease use `./stackc filename` or `./stackc -s \"1 .\"`");
+  assert(argc > 1, "Not enough arguments.\nUsage: `./stackc filename`");
   Queue *instructions = newQueue();
   Stack *stack = newStack();
   Definitions *definitions = newDefinitions();
@@ -851,7 +855,7 @@ int main(int argc, char* argv[]) {
             word[wordIndex++] = '\'';
           } else {
             printf("Ascii of: %d\n", next);
-            assert(0, "Unknown Escape Character ");
+            assert(0, "Unknown Escape Character");
           }
         } else if (c == '"') {
           word[wordIndex++] = '\0';
@@ -867,16 +871,16 @@ int main(int argc, char* argv[]) {
           word[wordIndex++] = c;
         }
       } else if (c == '"') {
-        /* word[wordIndex++] = c; */
         parsingString = 1;
-      } else if (c == '-' && lineIndex < lengthOfLine - 1 && line[lineIndex+1] == '-') {
+      } else if (c == '/' && lineIndex < lengthOfLine - 1 && line[lineIndex+1] == '/') {
+        /* Catch comments and stop parsing. */
         break;
       } else if (c == ' ' || c == '\n') {
         if (wordIndex == 0) {
           /* Skipping multiple spaces. */
           continue;
         }
-        Token *token = makeToken(row, lineIndex - wordIndex, word);
+        Token *token = makeToken(row + 1, lineIndex - wordIndex + 1, word);
         pushQueue(instructions, token);
         wordIndex = 0;
         memset(word, 0, sizeof(word));

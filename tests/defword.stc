@@ -1,12 +1,12 @@
--- duplicates top 2 elements
-def dup2 -- int, int -> int, int, int, int
+// duplicates top 2 elements
+def dup2 // int, int -> int, int, int, int
   over over
-enddef
+end
 
 2 3 dup2 . . . .
 
--- nth fibonacci number
-def fib -- int -> int
+// nth fibonacci number
+def fib // int -> int
   1 -
   0 1 rot
   while dup 0 > then
@@ -15,14 +15,14 @@ def fib -- int -> int
     rot 1 -
   end
   drop drop
-enddef
+end
 
 10 fib .
 29 fib .
 
-def sum3 + + enddef
+def sum3 + + end
 1 2 3 sum3 .
 3 3 3 sum3 .
 
-def ++ 1 + enddef
+def ++ 1 + end
 65 ++ .

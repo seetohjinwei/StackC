@@ -1,7 +1,7 @@
-def , dup . enddef
+def , dup . end
 
--- FizzBuzz from 1 to 100
-def FIZZ_MAX 100 enddef -- using as a constant
+// FizzBuzz from 1 to 100
+def FIZZ_MAX 100 end // using as a constant
 1
 while dup FIZZ_MAX <= then
   if dup 15 % 0 = then
@@ -17,7 +17,7 @@ while dup FIZZ_MAX <= then
 end
 drop
 
--- Simple 10 to 1 loop
+// Simple 10 to 1 loop
 
 10
 while dup 0 > then
@@ -26,7 +26,7 @@ while dup 0 > then
 end
 drop
 
--- Nested while loops
+// Nested while loops
 
 5
 while dup 0 > then
@@ -40,7 +40,7 @@ while dup 0 > then
 end
 drop
 
--- "Hi" 5 times
+// "Hi" 5 times
 
 5
 while dup 0 > then

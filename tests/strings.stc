@@ -4,12 +4,12 @@
 
 "C" "B" "A" print print print
 
--- "FA"A print -- is invalid
+// "FA"A print -- is invalid
 
 "ABC" print
 
 "\n\n\t\\\n" print
 
-"-- comment in a string\n" print
+"// comment in a string\n" print
 
 "\"Quotes are great\", bob\'s single quotes are also supported!\r\n" print
