@@ -6,6 +6,8 @@
 
 #define IN_EXT ".stc"
 #define OUT_EXT ".o"
+
+#define getCommand(command, programFile) asprintf(&command, "./stackc %s 2>&1", programFile)
 #define printUsage fprintf(stderr, "Usage: `%s [-duv] [directory]` or `%s [-uv] [files...]\n", thisName, thisName)
 
 /* Run tests on all files. */
@@ -17,9 +19,10 @@ static int verboseOutput = 0;
 
 static char *thisName;
 
-int compareFiles(FILE *, FILE *);
 int chopEnd(char *, char *);
-int runTest(char*);
+int compareFiles(FILE *, FILE *);
+int runTest(char *);
+void updateTest(char *);
 
 int compareFiles(FILE *program, FILE *expected) {
   char c = 1, d = 1;
@@ -43,7 +46,7 @@ int compareFiles(FILE *program, FILE *expected) {
   return result && c == EOF && d == EOF;
 }
 
-int runTest(char* fileName) {
+int runTest(char *fileName) {
   if (verboseOutput != 0) {
     fprintf(stdout, "\n[%s] Testing %s:\n", thisName, fileName);
   }
@@ -56,7 +59,7 @@ int runTest(char* fileName) {
     fprintf(stderr, "StackC Program File `%s%s` not found.\n", fileName, IN_EXT);
     return 0;
   }
-  asprintf(&command, "./stackc %s 2>&1", programFile);
+  getCommand(command, programFile);
   program = popen(command, "r");
   if (program == NULL) {
     fprintf(stderr, "Something went wrong executing StackC Program File `%s%s`.\n", fileName, IN_EXT);
@@ -74,12 +77,60 @@ int runTest(char* fileName) {
   int result = compareFiles(program, expected);
 
   int status = pclose(program);
+  fclose(expected);
   /* int errcode = WEXITSTATUS(status); */
   if (status == -1) {
     fprintf(stderr, "Error closing file with `pclose`.\n");
   }
 
   return result;
+}
+
+void updateTest(char *fileName) {
+  if (verboseOutput != 0) {
+    fprintf(stdout, "\n[%s] Updating %s\n", thisName, fileName);
+  }
+
+  FILE *program, *expected;
+  char *command, *programFile;
+  asprintf(&programFile, "%s%s", fileName, IN_EXT);
+  if (access(programFile, R_OK) != 0) {
+    /* Checks for read permission for programFile. */
+    fprintf(stderr, "StackC Program File `%s%s` not found.\n", fileName, IN_EXT);
+    return;
+  }
+  getCommand(command, programFile);
+  program = popen(command, "r");
+  if (program == NULL) {
+    fprintf(stderr, "Something went wrong executing StackC Program File `%s%s`.\n", fileName, IN_EXT);
+    return;
+  }
+
+  char *expectedFile;
+  asprintf(&expectedFile, "%s%s", fileName, OUT_EXT);
+  expected = fopen(expectedFile, "w");
+  if (expected == NULL) {
+    fprintf(stderr, "Expected Output File `%s` not found.\n", expectedFile);
+    return;
+  }
+
+  char c = 1;
+
+  do {
+    c = fgetc(program);
+    if (c != EOF) {
+      fputc(c, expected);
+      if (verboseOutput != 0) {
+        fputc(c, stdout);
+      }
+    }
+  } while (c != EOF);
+
+  int status = pclose(program);
+  fclose(expected);
+  if (status == -1) {
+    fprintf(stderr, "Error closing file with `pclose`.\n");
+  }
 }
 
 /* Returns 0 if ending not found. Will not be chopped. */
@@ -133,7 +184,9 @@ int main(int argc, char* argv[]) {
         continue;
       }
       tests++;
-      if (runTest(arg)) {
+      if (forceUpdate != 0) {
+        updateTest(arg);
+      } else if (runTest(arg)) {
         passed++;
       }
     }
@@ -171,7 +224,9 @@ int main(int argc, char* argv[]) {
         char *fileWithDir;
         asprintf(&fileWithDir, "%s%s", testDir, fileName);
         tests++;
-        if (runTest(fileWithDir)) {
+        if (forceUpdate != 0) {
+          updateTest(fileWithDir);
+        } else if (runTest(fileWithDir)) {
           passed++;
         }
       }
@@ -180,9 +235,13 @@ int main(int argc, char* argv[]) {
     closedir(d);
   }
 
-  fprintf(stdout, "Tests: %d/%d\n", passed, tests);
-  if (passed == tests) {
-    fprintf(stdout, "\n[%s] All tests passed! 🎉\n", thisName);
+  if (forceUpdate != 0) {
+    fprintf(stdout, "Done updating.\n");
+  } else {
+    fprintf(stdout, "Tests: %d/%d\n", passed, tests);
+    if (passed == tests) {
+      fprintf(stdout, "\n[%s] All tests passed! 🎉\n", thisName);
+    }
   }
 
   return 0;
