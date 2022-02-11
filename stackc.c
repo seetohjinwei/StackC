@@ -336,34 +336,6 @@ int isString(char *word) {
 /* Declaration here to use it in controlIf. */
 void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, QueueElem* queueElem);
 
-/* Jumps to one of the specified OP_TYPEs. Used in control flow. */
-void jumpTo(Stack* stack, Queue* instructions, Definitions* definitions, int *jumpPoints, size_t jumpPointsSize) {
-  Token *startToken = peekQueue(instructions)->token;
-  while (!isEmptyQueue(instructions)) {
-    Token *token = peekQueue(instructions)->token;
-    int type = token->OP_TYPE;
-    assertWithToken(type != OP_DEF, "`def` must be on highest level", token);
-    if (type == OP_IF || type == OP_WHILE) {
-      parseQueue(stack, instructions, definitions, pollQueue(instructions));
-      pollQueue(instructions);
-    }
-    int i;
-    for (i = 0; i < jumpPointsSize; i++) {
-      if (type == jumpPoints[i]) {
-        return;
-      }
-    }
-    pollQueue(instructions);
-  }
-  assertWithToken(0, "No `end` word in control flow.", startToken);
-}
-
-/* Specific version of jumpTo, for convenience. */
-void jumpToEnd(Stack* stack, Queue* instructions, Definitions* definitions) {
-  int jumpPoints[1] = {OP_END};
-  jumpTo(stack, instructions, definitions, jumpPoints, 1);
-}
-
 void parseUNKNOWN(PARSE_FUNC_TYPE) {
   DefWord *definition = findDefinition(definitions, token->word);
   if (definition == NULL) {
@@ -552,11 +524,26 @@ void parseIF(PARSE_FUNC_TYPE) {
   assertWithToken(hasThen, "`then` not found after `if` or `elseif`", token);
   int truth = popStack(stack);
   if (truth == 0) {
-    /* Jump to next block for evaluation. */
-    int jumpPoints[2] = {OP_ELSEIF, OP_END};
-    jumpTo(stack, instructions, definitions, jumpPoints, 2);
-    Token* next = pollQueue(instructions)->token;
-    parseIF(stack, instructions, definitions, next);
+    /* Jump to next block (elseif or end) for evaluation. */
+    int ends = 1, jumpType;
+    QueueElem *jumpElem;
+    Token *jumpToken;
+    while (ends > 0 && !isEmptyQueue(instructions)) {
+      jumpElem = pollQueue(instructions);
+      jumpToken = jumpElem->token;
+      jumpType = jumpToken->OP_TYPE;
+      assertWithToken(jumpType != OP_DEF, "No `def` in if", jumpToken);
+      if (jumpType == OP_IF || jumpType == OP_WHILE) {
+        ends++;
+      } else if (jumpType == OP_END) {
+        ends--;
+      }
+      if (jumpType == OP_ELSEIF || ends == 0) {
+        /* Jumps to either elseif block or end of if. */
+        break;
+      }
+    }
+    parseIF(stack, instructions, definitions, jumpToken);
   } else {
     int hasEnd = 0, type;
     while (!isEmptyQueue(instructions)) {
@@ -565,9 +552,26 @@ void parseIF(PARSE_FUNC_TYPE) {
       type = current->OP_TYPE;
       assertWithToken(type != OP_DEF, "No `def` in if", token);
       if (type == OP_ELSEIF) {
-        jumpToEnd(stack, instructions, definitions);
-        /* Poll `end` word off. */
-        current = pollQueue(instructions)->token;
+        /* Jump to end. */
+        int ends = 1, jumpType;
+        QueueElem *jumpElem;
+        Token *jumpToken;
+        while (ends > 0 && !isEmptyQueue(instructions)) {
+          jumpElem = pollQueue(instructions);
+          jumpToken = jumpElem->token;
+          jumpType = jumpToken->OP_TYPE;
+          assertWithToken(jumpType != OP_DEF, "No `def` in if", jumpToken);
+          if (jumpType == OP_IF || jumpType == OP_WHILE) {
+            ends++;
+          } else if (jumpType == OP_END) {
+            ends--;
+          }
+          if (ends == 0) {
+            /* Jumps to end of if. */
+            break;
+          }
+        }
+        return;
       }
       if (current->OP_TYPE == OP_END) {
         hasEnd = 1;
