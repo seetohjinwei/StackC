@@ -2,7 +2,7 @@
 
 StackC is a stack-oriented programming language that is inspired by [Forth](https://en.wikipedia.org/wiki/Forth_\(programming_language\)), another stack-oriented programming language. This language is built entirely for fun!
 
-The interpreter is written in C. Testing framework is written in Python.
+The interpreter and testing framework is written in C.
 
 If anyone stumbles upon this and has any feedback/bug reports, feel free to open an issue regarding it. I would appreciate it, thank you!
 
@@ -197,23 +197,23 @@ This is    tabbed!ABC
 
 | Escape Characters | Character |
 | --- | --- |
-| `\n` | New line |
-| `\r` | Carriage return |
-| `\t` | New tab |
 | `\"` | Double quotes |
 | `\'` | Single quotes |
 | `\\` | Backslash |
+| `\n` | New line |
+| `\r` | Carriage return |
+| `\t` | New tab |
 
 
 ### Stack Manipulation
 
 | Word | Description |
 | --- | --- |
-| `dup` | duplicates the first element |
 | `drop` | pops the first element |
-| `swap` | swaps the first two elements |
+| `dup` | duplicates the first element |
 | `over` | duplicates the second element and pushes it to the top |
 | `rot` | rotates the first 3 elements, `1 2 3 rot` -> `2 3 1` |
+| `swap` | swaps the first two elements |
 
 ### Control Flow
 
@@ -346,29 +346,48 @@ Documentation for standard library available [here](stdlib.md).
 
 ## Tests
 
-Some tests are available in `tests` folder, each `.stc` file is matched with a `.o` file which is the code and the expected result (stdout) respectively. These tests are run automatically by `test.py`, which must be executed in the root directory.
+Some tests are available in `tests` folder, each `.stc` file is matched with a `.o` file which is the code and the expected result respectively. These tests are run automatically by `test`.
 
 ### Quick Usage of Tests
 
-`./test.py` or `python3 test.py`
+If you downloaded the `Makefile`, just run `make`.
+
+Else you can run the tester manually, `gcc -o test test.c && ./test -d tests`
 
 ### Flags
 
+Flags must be declared before the directory/files.
+
 | Flag | Description |
 | --- | --- |
-| `f` | Creates (if it does not exist) and updates all `.o` files with the current `.stc` stdout. |
-| `v` | Verbose output. Displays stdout of the evaluation when there is a non-zero exit code. |
+| `d` | Runs all tests in specified directory after flags. Only one directory is allowed. |
+| `u` | Creates (if it does not exist) and updates all `.o` files with the current `.stc` stdout. |
+| `v` | Verbose output. Logs standard output of the evaluation and some debug information. |
 
-`./test.py -f` or `./test.py -fv`
+Do not include `.stc` when denoting the program.
+
+`./test -d tests` -> runs all tests
+
+`./test -dv tests` or `./test -d -v tests` -> runs all tests with verbose output
+
+`./test -u tests/if` -> runs `tests/if.stc` and updates `tests/if.o` with the current output
+
+`./test tests/if tests/while` -> runs `tests/if.stc` and compares with `tests/if.o` and same with `while`
+
+### Makefile Arguments
+
+| Command | Description |
+| --- | --- |
+| no arguments | Runs all tests in `tests` directory. |
+| `update` | Updates all expected files with current output. |
+| `verbose` | Runs all tests in `tests` directory with verbose output. |
+| `clean` | Cleans up `stackc` and `test` executables. |
 
 ## TODO
 
-- re-write parsing for if-elseif-end while-end def-end (some form of jump point system, instead of computing end multiple times)
 - simple type system (int, char, string, everything on the stack has a type)
 - every object is type-value-...-values
 - 'A' to register a character
-- use stderr instead of stdout when logging errors
-- re-write `test.py` testing framework in C
 
 - break statement to jump to the end
 - import/include files so we can actually import and use the stdlib.stc!!!
@@ -376,6 +395,8 @@ Some tests are available in `tests` folder, each `.stc` file is matched with a `
 - `stackc.c` debug flag to print stack after each operation
 - Bitwise operations
 - Rule 110 program
+- Game of life
+- brainfk interpreter
 - read input?
 - floats?
 

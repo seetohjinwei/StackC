@@ -94,17 +94,17 @@ typedef struct DefWord {
 
 /* Print Token for debugging. */
 void printToken(Token* token) {
-  printf("-- Token --\n");
-  printf("Position: %d %d\n", token->row, token->col);
-  printf("OP_TYPE: %d\n", token->OP_TYPE);
-  printf("Value: %d\n", token->value);
-  printf("Word: %s\n", token->word);
+  fprintf(stderr, "-- Token --\n");
+  fprintf(stderr, "Position: %d %d\n", token->row, token->col);
+  fprintf(stderr, "OP_TYPE: %d\n", token->OP_TYPE);
+  fprintf(stderr, "Value: %d\n", token->value);
+  fprintf(stderr, "Word: %s\n", token->word);
 }
 
 /* Assert with Token. */
 int assertWithToken(int truth, char *message, Token* token) {
   if (truth == 0) {
-    printf("Assertion Error: %s\n", message);
+    fprintf(stderr, "Assertion Error: %s\n", message);
     if (token != NULL) {
       printToken(token);
     }
