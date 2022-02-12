@@ -176,18 +176,17 @@ The following words will print into standard output. Will have an error if the o
 
 | Word | Description |
 | --- | --- |
-| `.` | pops from the top of the stack, removing it, printing the integer. |
-| `emit` | similar to `.` but prints the ASCII equivalent instead. |
+| `.` | pops from the top of the stack, removing and printing it. |
 | `.s` | prints the size of the current stack. Intended to be used for debugging interpreter. |
 
 ```stackc
-65 1 2 3
-.s   // prints 4
+'A' 1 2 3 "String"
+.s   // prints 17
+.    // prints String
 .    // prints 3
 .    // prints 2
 .    // prints 1
-emit // prints `A`
-.s   // prints 0
+.    // prints A
 ```
 
 ```python
@@ -207,20 +206,20 @@ Type code: 2
 
 Strings are saved by characters in the stack.
 
-`"ABC"` pushes 0, 67, 66, 65, 3 onto the stack.
+`"ABC"` pushes 0, 67, 66, 65, 3 (size), 2 (typecode) onto the stack.
 
-The string size will be at the top of the stack, followed by `n` characters in ascii and then the terminating NULL character.
+Type code will be on top of the stack, followed by the string size, followed by `n` characters in ascii and then the terminating NULL character.
 
-`print` pops a string off the stack and prints it to standard output.
+`.` pops a string off the stack and prints it to standard output.
 
 Multi-line strings are not directly supported. However you can use `\n` for a new line.
 
 ```stackc
-"Hello World\n" print
+"Hello World\n" .
 
-"This is\t tabbed!" print
+"This is\t tabbed!" .
 
-"C" "B" "A" print print print
+"C" "B" "A" . . .
 ```
 
 will print the following to the standard output
