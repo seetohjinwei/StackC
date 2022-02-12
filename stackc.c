@@ -26,7 +26,6 @@ typedef enum OPS {
   OP_GT,
   OP_LT,
   OP_POP,
-  OP_EMIT,
   OP_SIZE,
   OP_DUP,
   OP_DROP,
@@ -491,11 +490,6 @@ void parsePOP(PARSE_FUNC_TYPE) {
   }
 }
 
-void parseEMIT(PARSE_FUNC_TYPE) {
-  int top = popStack(stack);
-  printf("%c", top);
-}
-
 void parseSIZE(PARSE_FUNC_TYPE) {
   int size = stack->size;
   printf("%d", size);
@@ -727,7 +721,7 @@ void parseDEF(PARSE_FUNC_TYPE) {
 
 /* Parses a token. */
 void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, QueueElem* queueElem) {
-  assert(OPS_COUNT == 29, "Update control flow in parse().");
+  assert(OPS_COUNT == 28, "Update control flow in parse().");
   Token *token = queueElem->token;
   void (*parsers[OPS_COUNT]) (PARSE_FUNC_TYPE) = {
     parseUNKNOWN,
@@ -746,7 +740,6 @@ void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, Que
     parseGT,
     parseLT,
     parsePOP,
-    parseEMIT,
     parseSIZE,
     parseDUP,
     parseDROP,
@@ -771,7 +764,7 @@ Token* makeToken(int row, int col, char *word) {
   token->value = 0;
   token->OP_TYPE = OP_UNKNOWN;
   strncpy(token->word, word, MAX_WORD_SIZE);
-  assert(OPS_COUNT == 29, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 28, "Update control flow in makeToken().");
   /* control flow to decide type of operation */
   char *types[OPS_COUNT] = {
     "", /* UNKNOWN */
@@ -790,7 +783,6 @@ Token* makeToken(int row, int col, char *word) {
     ">",
     "<",
     ".",
-    "emit",
     ".s",
     "dup",
     "drop",
