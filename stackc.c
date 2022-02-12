@@ -353,6 +353,8 @@ void parseUNKNOWN(PARSE_FUNC_TYPE) {
 
 void parseINT(PARSE_FUNC_TYPE) {
   pushStack(stack, token->value);
+  /* Type code of 0 */
+  pushStack(stack, 0);
 }
 
 void parseSTR(PARSE_FUNC_TYPE) {
@@ -380,6 +382,8 @@ void parseSTR(PARSE_FUNC_TYPE) {
     pushStack(stack, current);
   }
   pushStack(stack, size);
+  /* Type code of 2 */
+  pushStack(stack, 2);
 }
 
 void parseADD(PARSE_FUNC_TYPE) {
