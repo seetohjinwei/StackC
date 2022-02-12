@@ -12,6 +12,7 @@ static char *thisName;
 typedef enum OPS {
   OP_UNKNOWN,
   OP_INT,
+  OP_CHAR,
   OP_STR,
   OP_ADD,
   OP_SUB,
@@ -357,6 +358,12 @@ void parseINT(PARSE_FUNC_TYPE) {
   pushStack(stack, 0);
 }
 
+void parseCHAR(PARSE_FUNC_TYPE) {
+  pushStack(stack, token->value);
+  /* Type code of 1 */
+  pushStack(stack, 1);
+}
+
 void parseSTR(PARSE_FUNC_TYPE) {
   /* Parses a string. */
   /* The string size will be at the top of the stack, followed by `n` characters in ascii and then the terminating NULL character. */
@@ -386,10 +393,21 @@ void parseSTR(PARSE_FUNC_TYPE) {
   pushStack(stack, 2);
 }
 
+/* If both a or b are int, the result will be a int. Else, it will be a char. */
 void parseADD(PARSE_FUNC_TYPE) {
+  int a_type = popStack(stack);
   int a = popStack(stack);
+  assertWithToken(a_type == 0 || a_type == 1, "+ is only defined for int and char.", token);
+  int b_type = popStack(stack);
   int b = popStack(stack);
+  assertWithToken(b_type == 0 || b_type == 1, "+ is only defined for int and char.", token);
+  assertWithToken(a_type != 1 && b_type != 1, "char char + not supported", token);
   pushStack(stack, b + a);
+  if (a_type == 0 && b_type == 0) {
+    pushStack(stack, 0);
+  } else {
+    pushStack(stack, 1);
+  }
 }
 
 void parseSUB(PARSE_FUNC_TYPE) {
@@ -453,8 +471,25 @@ void parseLT(PARSE_FUNC_TYPE) {
 }
 
 void parsePOP(PARSE_FUNC_TYPE) {
-  int top = popStack(stack);
-  printf("%d", top);
+  int type = popStack(stack);
+  if (type == 0) {
+    /* Type code of int */
+    int value = popStack(stack);
+    printf("%d", value);
+  } else if (type == 1) {
+    /* Type code of char */
+    int value = popStack(stack);
+    printf("%c", value);
+  } else if (type == 2) {
+    /* Type code of string */
+    int size = popStack(stack);
+    int i;
+    for (i = 0; i < size; i++) {
+      fputc(popStack(stack), stdout);
+    }
+    int null = popStack(stack);
+    assertWithToken(null == '\0', "String must have a null character at the end", token);
+  }
 }
 
 void parseEMIT(PARSE_FUNC_TYPE) {
@@ -703,11 +738,12 @@ void parseDEF(PARSE_FUNC_TYPE) {
 
 /* Parses a token. */
 void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, QueueElem* queueElem) {
-  assert(OPS_COUNT == 29, "Update control flow in parse().");
+  assert(OPS_COUNT == 30, "Update control flow in parse().");
   Token *token = queueElem->token;
   void (*parsers[OPS_COUNT]) (PARSE_FUNC_TYPE) = {
     parseUNKNOWN,
     parseINT,
+    parseCHAR,
     parseSTR,
     parseADD,
     parseSUB,
@@ -747,11 +783,12 @@ Token* makeToken(int row, int col, char *word) {
   token->value = 0;
   token->OP_TYPE = OP_UNKNOWN;
   strncpy(token->word, word, MAX_WORD_SIZE);
-  assert(OPS_COUNT == 29, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 30, "Update control flow in makeToken().");
   /* control flow to decide type of operation */
   char *types[OPS_COUNT] = {
     "", /* UNKNOWN */
     "", /* INT */
+    "", /* CHAR */
     "", /* STR */
     "+",
     "-",
@@ -783,7 +820,7 @@ Token* makeToken(int row, int col, char *word) {
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;
     token->value = atoi(word);
-    /* isString is overridden anyways. */
+    /* isString and isCharacter are overridden anyways. */
   } else {
     int i;
     for (i = 0; i < OPS_COUNT; i++) {
@@ -848,6 +885,7 @@ int main(int argc, char* argv[]) {
   ssize_t lengthOfLine;
   size_t len = 0;
   int parsingString = 0; /* Different behaviour when parsing strings. */
+  int parsingChar = 0; /* Different behaviour when parsing chars. */
   while ((lengthOfLine = getline(&line, &len, source)) != -1) {
     int wordIndex = 0;
     memset(word, 0, sizeof(word));
@@ -855,7 +893,39 @@ int main(int argc, char* argv[]) {
     for (lineIndex = 0; lineIndex < lengthOfLine; lineIndex++) {
       char c = line[lineIndex];
       /* Catch comments and ignore the rest (by exiting for loop). */
-      if (parsingString == 1) {
+      if (c == '\'' && wordIndex == 0) {
+        char next = line[++lineIndex];
+        if (next == '\\') {
+          char escape = line[++lineIndex];
+          if (escape == '\\') {
+            next = '\\';
+          } else if (escape == 'n') {
+            next = '\n';
+          } else if (escape == 'r') {
+            next = '\r';
+          } else if (escape == 't') {
+            next = '\t';
+          } else if (escape == '"') {
+            next = '"';
+          } else if (escape == '\'') {
+            next = '\'';
+          } else {
+            fprintf(stderr, "[%s] Ascii of: %d\n", thisName, escape);
+            assert(0, "Unknown Escape Character");
+          }
+        }
+        char *assertMessage;
+        asprintf(&assertMessage, "Invalid character at %d %d", row + 1, lineIndex - wordIndex + 1);
+        assert(line[++lineIndex] == '\'', assertMessage);
+        word[0] = next;
+        word[1] = '\0';
+        Token *token = makeToken(row + 1, lineIndex - wordIndex + 1, word);
+        pushQueue(instructions, token);
+        /* We already know this is a character. */
+        token->OP_TYPE = OP_CHAR;
+        token->value = next;
+        wordIndex = 0;
+      } else if (parsingString == 1) {
         if (c == '\\') {
           /* Handle Escape Characters */
           char next = line[++lineIndex];
@@ -878,7 +948,7 @@ int main(int argc, char* argv[]) {
         } else if (c == '"') {
           word[wordIndex++] = '\0';
           parsingString = 0;
-          Token *token = makeToken(row, lineIndex - wordIndex, word);
+          Token *token = makeToken(row + 1, lineIndex - wordIndex + 1, word);
           pushQueue(instructions, token);
           /* We already know this is a string. */
           token->OP_TYPE = OP_STR;
@@ -888,7 +958,7 @@ int main(int argc, char* argv[]) {
           assert(wordIndex < MAX_WORD_SIZE, "Word is too long!");
           word[wordIndex++] = c;
         }
-      } else if (c == '"') {
+      } else if (c == '"' && parsingChar == 0) {
         parsingString = 1;
       } else if (c == '/' && lineIndex < lengthOfLine - 1 && line[lineIndex+1] == '/') {
         /* Catch comments and stop parsing. */
