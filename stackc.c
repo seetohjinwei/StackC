@@ -399,7 +399,7 @@ void parseADD(PARSE_FUNC_TYPE) {
   int b_type = popStack(stack);
   int b = popStack(stack);
   assertWithToken(b_type == 0 || b_type == 1, "+ is only defined for int and char.", token);
-  assertWithToken(a_type != 1 && b_type != 1, "char char + not supported", token);
+  assertWithToken(a_type != 1 || b_type != 1, "char char + not supported", token);
   pushStack(stack, b + a);
   if (a_type == 0 && b_type == 0) {
     pushStack(stack, 0);
@@ -409,9 +409,20 @@ void parseADD(PARSE_FUNC_TYPE) {
 }
 
 void parseSUB(PARSE_FUNC_TYPE) {
+  int a_type = popStack(stack);
   int a = popStack(stack);
+  assertWithToken(a_type == 0 || a_type == 1, "- is only defined for int and char.", token);
+  int b_type = popStack(stack);
   int b = popStack(stack);
+  assertWithToken(b_type == 0 || b_type == 1, "- is only defined for int and char.", token);
   pushStack(stack, b - a);
+  if (a_type == 0 && b_type == 0) {
+    pushStack(stack, 0);
+  } else if (a_type == 0 && b_type == 1) {
+    pushStack(stack, 1);
+  } else {
+    assertWithToken(0, "- is only defined for int int - and char int -", token);
+  }
 }
 
 void parseMUL(PARSE_FUNC_TYPE) {
@@ -898,6 +909,7 @@ int main(int argc, char* argv[]) {
         assert(line[++lineIndex] == '\'', assertMessage);
         word[0] = next;
         word[1] = '\0';
+        /* C ensures that next is a valid ascii because it is typed as a char here. */
         Token *token = makeToken(row + 1, lineIndex - wordIndex + 1, word);
         pushQueue(instructions, token);
         /* We already know this is a character. */

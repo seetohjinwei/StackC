@@ -130,11 +130,26 @@ print(50 % 7)    # prints 1
 
 Adding 2 integers will result in an integer. If either of the 2 objects are characters, the result will be a character. Cannot add 2 characters.
 
+Note that valid character is not guranteed.
+
 ```stackc
  1   2  +  //  3
 'a'  1  +  // 'b'
  2  'c' +  // 'a'
 'a' 'b' +  // Error: char char + not supported.
+```
+
+##### Subtraction (-)
+
+Subtracting 2 integers will result in an integer. Character subtract integer will result in a character.
+
+Note that valid character is not guranteed.
+
+```stackc
+ 5   1  -  //  4
+'z'  5  -  // 'u'
+ 2  'c' -  // Error: int char - not supported.
+'a' 'b' -  // Error: char char - not supported.
 ```
 
 #### Comparison Operations
@@ -426,11 +441,6 @@ Do not include `.stc` when denoting the program.
 | `clean` | Cleans up `stackc` and `test` executables. |
 
 ## TODO
-
-- simple type system (int, char, string, everything on the stack has a type)
-- every object is type-value-...-values
-- 'A' to register a character
-- write tests/push.stc test for char pushing
 
 - break statement to jump to the end
 - import/include files so we can actually import and use the stdlib.stc!!!

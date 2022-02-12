@@ -1,0 +1,6 @@
+[./stackc] Assertion Error: char char + not supported
+-- [./stackc] Token --
+Position: 1 9
+OP_TYPE: 4
+Value: 0
+Word: +
