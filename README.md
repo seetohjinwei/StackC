@@ -104,28 +104,6 @@ Used as in Reverse Polish Notation, e.g. `1 2 +` (RPN) === `1 + 2` (usual infix 
 
 The follow operations pop 2 elements off the stack and push the result back on it.
 
-| Word | Description |
-| --- | --- |
-| `+` | adds the two elements |
-| `-` | subtracts the two elements |
-| `*` | multiplies the two elements |
-| `/` | floor divides the two elements |
-| `%` | remainder of the two elements |
-
-```stackc
-9 3 - .  // prints 6
-5 6 * .  // prints 30
-50 7 / . // prints 7
-50 7 % . // prints 1
-```
-
-```python
-print(9 - 3)     # prints 6
-print(5 * 6)     # prints 30
-print(50 // 7)   # prints 7
-print(50 % 7)    # prints 1
-```
-
 ##### Add (+)
 
 Adding 2 integers will result in an integer. If either of the 2 objects are characters, the result will be a character. Cannot add 2 characters.
@@ -150,6 +128,16 @@ Note that valid character is not guranteed.
 'z'  5  -  // 'u'
  2  'c' -  // Error: int char - not supported.
 'a' 'b' -  // Error: char char - not supported.
+```
+
+##### Multiplication (*), Division (/), Remainder (%)
+
+These 3 operations only work on two integers.
+
+```stackc
+3  3 *   // 9
+13 4 /   // 3
+13 4 %   // 1
 ```
 
 #### Comparison Operations

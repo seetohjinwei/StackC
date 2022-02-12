@@ -426,21 +426,33 @@ void parseSUB(PARSE_FUNC_TYPE) {
 }
 
 void parseMUL(PARSE_FUNC_TYPE) {
+  int a_type = popStack(stack);
   int a = popStack(stack);
+  int b_type = popStack(stack);
   int b = popStack(stack);
+  assertWithToken(a_type == 0 && b_type == 0, "* is only defined for int", token);
   pushStack(stack, b * a);
+  pushStack(stack, 0);
 }
 
 void parseDIV(PARSE_FUNC_TYPE) {
+  int a_type = popStack(stack);
   int a = popStack(stack);
+  int b_type = popStack(stack);
   int b = popStack(stack);
+  assertWithToken(a_type == 0 && b_type == 0, "/ is only defined for int", token);
   pushStack(stack, b / a);
+  pushStack(stack, 0);
 }
 
 void parseREM(PARSE_FUNC_TYPE) {
+  int a_type = popStack(stack);
   int a = popStack(stack);
+  int b_type = popStack(stack);
   int b = popStack(stack);
+  assertWithToken(a_type == 0 && b_type == 0, "% is only defined for int", token);
   pushStack(stack, b % a);
+  pushStack(stack, 0);
 }
 
 void parseEQU(PARSE_FUNC_TYPE) {
