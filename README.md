@@ -135,7 +135,7 @@ Note that valid character is not guranteed.
 These 3 operations only work on two integers.
 
 ```stackc
-3  3 *   // 9
+ 3 3 *   // 9
 13 4 /   // 3
 13 4 %   // 1
 ```
@@ -190,17 +190,6 @@ The following words will print into standard output. Will have an error if the o
 .    // prints 2
 .    // prints 1
 .    // prints A
-```
-
-```python
-stack = [65, 1, 2, 3]
-print(stack[-1])           # prints 3
-print(len(stack))          # prints 4
-print(stack.pop())         # prints 3
-print(stack.pop())         # prints 2
-print(stack.pop())         # prints 1
-print(chr(stack.pop()))    # prints `A`
-print(len(stack))          # prints 0
 ```
 
 ### Strings
