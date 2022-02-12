@@ -64,7 +64,7 @@ print(chr(65)) # prints an `A` character
 
 ## Types
 
-StackC uses a simple inferred typing system to allow operations to understand what type of object they are computing should they care about it.
+StackC uses a simple inferred typing system to allow operations to understand what type of object they are computing, should they care about it.
 
 The types currently supported are integers, characters, strings.
 
@@ -151,8 +151,8 @@ The following operations pop 2 elements off the stack and push 0 (if false) and 
 Integers and characters can be compared with each other. Strings can be compared as well.
 
 ```stackc
-  0  1  =    // 0 (false)
-'A' 65  =    // 1 (true)
+  0  1   =    // 0 (false)
+'A' 65   =    // 1 (true)
  65 'a' !=   // 1 (true)
 'A' 'a' !=   // 1 (true)
 
@@ -165,19 +165,11 @@ Integers and characters can be compared with each other. Strings can be compared
 Integers are characters can be compared with each other. Strings cannot be compared.
 
 ```stackc
-19 19 >= . // prints 1 (true)
-20 19 >= . // prints 1 (true)
-19 5 <= .  // prints 0 (false)
-2 1 > .    // prints 1 (true)
-5 5 < .    // prints 0 (false)
-```
-
-```python
-print(19 >= 19)  # prints True
-print(20 >= 19)  # prints True
-print(19 <= 5)   # prints False
-print(2 > 1)     # prints True
-print(5 < 5)     # prints False
+19 19 >= .   // prints 1 (true)
+20 19 >= .   // prints 1 (true)
+19  5 <= .   // prints 0 (false)
+ 2  1 >  .   // prints 1 (true)
+ 5  5 <  .   // prints 0 (false)
 ```
 
 #### Printing to Standard Output
@@ -236,7 +228,6 @@ This is    tabbed!ABC
 | `\n` | New line |
 | `\r` | Carriage return |
 | `\t` | New tab |
-
 
 ## Stack Manipulation
 
@@ -402,7 +393,6 @@ Flags must be declared before the directory/files.
 | `v` | Verbose output. Logs standard output of the evaluation and some debug information. |
 
 Do not include `.stc` when denoting the program.
-
 
 ```shell
 ./test -d tests # runs all tests
