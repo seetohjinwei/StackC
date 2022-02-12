@@ -9,6 +9,13 @@
 
 static char *thisName;
 
+typedef enum TYPE {
+  TYPE_INT,
+  TYPE_CHAR,
+  TYPE_STR,
+  TYPE_COUNT,
+} TYPE;
+
 typedef enum OPS {
   OP_UNKNOWN,
   OP_INT,
@@ -352,14 +359,12 @@ void parseUNKNOWN(PARSE_FUNC_TYPE) {
 
 void parseINT(PARSE_FUNC_TYPE) {
   pushStack(stack, token->value);
-  /* Type code of 0 */
-  pushStack(stack, 0);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseCHAR(PARSE_FUNC_TYPE) {
   pushStack(stack, token->value);
-  /* Type code of 1 */
-  pushStack(stack, 1);
+  pushStack(stack, TYPE_CHAR);
 }
 
 void parseSTR(PARSE_FUNC_TYPE) {
@@ -387,39 +392,38 @@ void parseSTR(PARSE_FUNC_TYPE) {
     pushStack(stack, current);
   }
   pushStack(stack, size);
-  /* Type code of 2 */
-  pushStack(stack, 2);
+  pushStack(stack, TYPE_STR);
 }
 
 /* If both a or b are int, the result will be a int. Else, it will be a char. */
 void parseADD(PARSE_FUNC_TYPE) {
   int a_type = popStack(stack);
   int a = popStack(stack);
-  assertWithToken(a_type == 0 || a_type == 1, "+ is only defined for int and char.", token);
+  assertWithToken(a_type == TYPE_INT || a_type == TYPE_CHAR, "+ is only defined for int and char.", token);
   int b_type = popStack(stack);
   int b = popStack(stack);
-  assertWithToken(b_type == 0 || b_type == 1, "+ is only defined for int and char.", token);
-  assertWithToken(a_type != 1 || b_type != 1, "char char + not supported", token);
+  assertWithToken(b_type == TYPE_INT || b_type == TYPE_CHAR, "+ is only defined for int and char.", token);
+  assertWithToken(a_type != TYPE_CHAR || b_type != TYPE_CHAR, "char char + not supported", token);
   pushStack(stack, b + a);
-  if (a_type == 0 && b_type == 0) {
-    pushStack(stack, 0);
+  if (a_type == TYPE_INT && b_type == TYPE_INT) {
+    pushStack(stack, TYPE_INT);
   } else {
-    pushStack(stack, 1);
+    pushStack(stack, TYPE_CHAR);
   }
 }
 
 void parseSUB(PARSE_FUNC_TYPE) {
   int a_type = popStack(stack);
   int a = popStack(stack);
-  assertWithToken(a_type == 0 || a_type == 1, "- is only defined for int and char.", token);
+  assertWithToken(a_type == TYPE_INT || a_type == TYPE_CHAR, "- is only defined for int and char.", token);
   int b_type = popStack(stack);
   int b = popStack(stack);
-  assertWithToken(b_type == 0 || b_type == 1, "- is only defined for int and char.", token);
+  assertWithToken(b_type == TYPE_INT || b_type == TYPE_CHAR, "- is only defined for int and char.", token);
   pushStack(stack, b - a);
-  if (a_type == 0 && b_type == 0) {
-    pushStack(stack, 0);
-  } else if (a_type == 0 && b_type == 1) {
-    pushStack(stack, 1);
+  if (a_type == TYPE_INT && b_type == TYPE_INT) {
+    pushStack(stack, TYPE_INT);
+  } else if (a_type == TYPE_INT && b_type == TYPE_CHAR) {
+    pushStack(stack, TYPE_CHAR);
   } else {
     assertWithToken(0, "- is only defined for int int - and char int -", token);
   }
@@ -430,9 +434,9 @@ void parseMUL(PARSE_FUNC_TYPE) {
   int a = popStack(stack);
   int b_type = popStack(stack);
   int b = popStack(stack);
-  assertWithToken(a_type == 0 && b_type == 0, "* is only defined for int", token);
+  assertWithToken(a_type == TYPE_INT && b_type == TYPE_INT, "* is only defined for int", token);
   pushStack(stack, b * a);
-  pushStack(stack, 0);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseDIV(PARSE_FUNC_TYPE) {
@@ -440,9 +444,9 @@ void parseDIV(PARSE_FUNC_TYPE) {
   int a = popStack(stack);
   int b_type = popStack(stack);
   int b = popStack(stack);
-  assertWithToken(a_type == 0 && b_type == 0, "/ is only defined for int", token);
+  assertWithToken(a_type == TYPE_INT && b_type == TYPE_INT, "/ is only defined for int", token);
   pushStack(stack, b / a);
-  pushStack(stack, 0);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseREM(PARSE_FUNC_TYPE) {
@@ -450,14 +454,14 @@ void parseREM(PARSE_FUNC_TYPE) {
   int a = popStack(stack);
   int b_type = popStack(stack);
   int b = popStack(stack);
-  assertWithToken(a_type == 0 && b_type == 0, "% is only defined for int", token);
+  assertWithToken(a_type == TYPE_INT && b_type == TYPE_INT, "% is only defined for int", token);
   pushStack(stack, b % a);
-  pushStack(stack, 0);
+  pushStack(stack, TYPE_INT);
 }
 
 int checkEquality(Stack *stack, Token *token) {
   int a_type = popStack(stack);
-  if (a_type == 2) {
+  if (a_type == TYPE_STR) {
     int sizeA = popStack(stack);
     char wordA[sizeA + 1];
     int i;
@@ -465,7 +469,7 @@ int checkEquality(Stack *stack, Token *token) {
       wordA[i] = popStack(stack);
     }
     int b_type = popStack(stack);
-    assertWithToken(b_type == 2, "Can only compare strings with each other (=)", token);
+    assertWithToken(b_type == TYPE_STR, "Can only compare strings with each other (=)", token);
     int sizeB = popStack(stack);
     int result = sizeA == sizeB;
     char wordB[sizeB + 1];
@@ -480,7 +484,7 @@ int checkEquality(Stack *stack, Token *token) {
     int a = popStack(stack);
     int b_type = popStack(stack);
     int b = popStack(stack);
-    assertWithToken((a_type == 0 || a_type == 1) && (b_type == 0 || b_type == 1), "Invalid types for =", token);
+    assertWithToken((a_type == TYPE_INT || a_type == TYPE_CHAR) && (b_type == TYPE_INT || b_type == TYPE_CHAR), "Invalid types for =", token);
     return a == b;
   }
 }
@@ -488,13 +492,13 @@ int checkEquality(Stack *stack, Token *token) {
 void parseEQU(PARSE_FUNC_TYPE) {
   int result = checkEquality(stack, token);
   pushStack(stack, result);
-  pushStack(stack, 0);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseNEQU(PARSE_FUNC_TYPE) {
   int result = !checkEquality(stack, token);
   pushStack(stack, result);
-  pushStack(stack, 0);
+  pushStack(stack, TYPE_INT);
 }
 
 int checkLessThan(Stack *stack, Token *token, int swap) {
@@ -502,7 +506,7 @@ int checkLessThan(Stack *stack, Token *token, int swap) {
   int b = popStack(stack);
   int a_type = popStack(stack);
   int a = popStack(stack);
-  assertWithToken((a_type == 0 || a_type == 1) && (b_type == 0 || b_type == 1), "Invalid types for inequalities", token);
+  assertWithToken((a_type == TYPE_INT || a_type == TYPE_CHAR) && (b_type == TYPE_INT || b_type == TYPE_CHAR), "Invalid types for inequalities", token);
   if (swap == 0) {
     return a < b;
   } else {
@@ -514,42 +518,39 @@ void parseGTE(PARSE_FUNC_TYPE) {
   /* !(a < b) == b <= a == a <= b */
   int result = !checkLessThan(stack, token, 0);
   pushStack(stack, result);
-  pushStack(stack, 0);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseLTE(PARSE_FUNC_TYPE) {
   /* !(b < a) == a <= b */
   int result = !checkLessThan(stack, token, 1);
   pushStack(stack, result);
-  pushStack(stack, 0);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseGT(PARSE_FUNC_TYPE) {
   /* b < a == a > b */
   int result = checkLessThan(stack, token, 1);
   pushStack(stack, result);
-  pushStack(stack, 0);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseLT(PARSE_FUNC_TYPE) {
   /* a < b */
   int result = checkLessThan(stack, token, 0);
   pushStack(stack, result);
-  pushStack(stack, 0);
+  pushStack(stack, TYPE_INT);
 }
 
 void parsePOP(PARSE_FUNC_TYPE) {
   int type = popStack(stack);
-  if (type == 0) {
-    /* Type code of int */
+  if (type == TYPE_INT) {
     int value = popStack(stack);
     printf("%d", value);
-  } else if (type == 1) {
-    /* Type code of char */
+  } else if (type == TYPE_CHAR) {
     int value = popStack(stack);
     printf("%c", value);
-  } else if (type == 2) {
-    /* Type code of string */
+  } else if (type == TYPE_STR) {
     int size = popStack(stack);
     int i;
     for (i = 0; i < size; i++) {
