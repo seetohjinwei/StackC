@@ -650,9 +650,9 @@ void parseEND(PARSE_FUNC_TYPE) {
 
 int validateWordName(char *word) {
   char first = word[0];
-  if ('0' <= first || first <= '9') {
+  if ('0' <= first && first <= '9') {
     /* first character cannot be a number */
-    return 1;
+    return 0;
   }
   /* no character in the word can be any of these */
   #define invalidCharsSize 2

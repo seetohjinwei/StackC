@@ -290,9 +290,13 @@ while x <= 100:
   x += 1
 ```
 
-### Defining Words
+## Defining Words
 
 It is possible to define custom words, which is useful for repeated operations. It is also possible to define "constants" this way as well, however, at the moment, the interpreter does not optimise for this.
+
+Rules:
+1. Words cannot start with a number.
+2. Words cannot contain `'` and `"`.
 
 Do note that recursion is not supported. Weird things may happen (probably segfault). StackC *may* support recursion in the future, depending on how hard it is to implement.
 
