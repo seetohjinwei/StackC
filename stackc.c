@@ -455,40 +455,87 @@ void parseREM(PARSE_FUNC_TYPE) {
   pushStack(stack, 0);
 }
 
+int checkEquality(Stack *stack, Token *token) {
+  int a_type = popStack(stack);
+  if (a_type == 2) {
+    int sizeA = popStack(stack);
+    char wordA[sizeA + 1];
+    int i;
+    for (i = 0; i < sizeA + 1; i++) {
+      wordA[i] = popStack(stack);
+    }
+    int b_type = popStack(stack);
+    assertWithToken(b_type == 2, "Can only compare strings with each other (=)", token);
+    int sizeB = popStack(stack);
+    int result = sizeA == sizeB;
+    char wordB[sizeB + 1];
+    for (i = 0; i < sizeB + 1; i++) {
+      wordB[i] = popStack(stack);
+      if (result != 0 && wordA[i] != wordB[i]) {
+        result = 0;
+      }
+    }
+    return result;
+  } else {
+    int a = popStack(stack);
+    int b_type = popStack(stack);
+    int b = popStack(stack);
+    assertWithToken((a_type == 0 || a_type == 1) && (b_type == 0 || b_type == 1), "Invalid types for =", token);
+    return a == b;
+  }
+}
+
 void parseEQU(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
-  int b = popStack(stack);
-  pushStack(stack, a == b ? 1 : 0);
+  int result = checkEquality(stack, token);
+  pushStack(stack, result);
+  pushStack(stack, 0);
 }
 
 void parseNEQU(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
+  int result = !checkEquality(stack, token);
+  pushStack(stack, result);
+  pushStack(stack, 0);
+}
+
+int checkLessThan(Stack *stack, Token *token, int swap) {
+  int b_type = popStack(stack);
   int b = popStack(stack);
-  pushStack(stack, a != b ? 1 : 0);
+  int a_type = popStack(stack);
+  int a = popStack(stack);
+  assertWithToken((a_type == 0 || a_type == 1) && (b_type == 0 || b_type == 1), "Invalid types for inequalities", token);
+  if (swap == 0) {
+    return a < b;
+  } else {
+    return b < a;
+  }
 }
 
 void parseGTE(PARSE_FUNC_TYPE) {
-  int b = popStack(stack);
-  int a = popStack(stack);
-  pushStack(stack, a >= b ? 1 : 0);
+  /* !(a < b) == b <= a == a <= b */
+  int result = !checkLessThan(stack, token, 0);
+  pushStack(stack, result);
+  pushStack(stack, 0);
 }
 
 void parseLTE(PARSE_FUNC_TYPE) {
-  int b = popStack(stack);
-  int a = popStack(stack);
-  pushStack(stack, a <= b ? 1 : 0);
+  /* !(b < a) == a <= b */
+  int result = !checkLessThan(stack, token, 1);
+  pushStack(stack, result);
+  pushStack(stack, 0);
 }
 
 void parseGT(PARSE_FUNC_TYPE) {
-  int b = popStack(stack);
-  int a = popStack(stack);
-  pushStack(stack, a > b ? 1 : 0);
+  /* b < a == a > b */
+  int result = checkLessThan(stack, token, 1);
+  pushStack(stack, result);
+  pushStack(stack, 0);
 }
 
 void parseLT(PARSE_FUNC_TYPE) {
-  int b = popStack(stack);
-  int a = popStack(stack);
-  pushStack(stack, a < b ? 1 : 0);
+  /* a < b */
+  int result = checkLessThan(stack, token, 0);
+  pushStack(stack, result);
+  pushStack(stack, 0);
 }
 
 void parsePOP(PARSE_FUNC_TYPE) {

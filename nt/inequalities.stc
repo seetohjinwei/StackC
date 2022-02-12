@@ -1,0 +1,7 @@
+19 19 >= . // prints 1 (true)
+20 19 >= . // prints 1 (true)
+19 5 <= .  // prints 0 (false)
+2 1 > .    // prints 1 (true)
+5 5 < .    // prints 0 (false)
+
+.s

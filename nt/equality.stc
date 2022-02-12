@@ -1,0 +1,9 @@
+  0  1  =  .   // 0 (false)
+'A' 65  =  .   // 1 (true)
+ 65 'a' = .    // 0 (false)
+'A' 'a' = .    // 0 (false)
+
+"Hello" "Hello " = .   // 0 (false)
+"ABC"   "ABC"    = .   // 1 (true)
+
+.s

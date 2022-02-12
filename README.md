@@ -104,7 +104,7 @@ Used as in Reverse Polish Notation, e.g. `1 2 +` (RPN) === `1 + 2` (usual infix 
 
 The follow operations pop 2 elements off the stack and push the result back on it.
 
-##### Add (+)
+##### Addition (+)
 
 Adding 2 integers will result in an integer. If either of the 2 objects are characters, the result will be a character. Cannot add 2 characters.
 
@@ -142,20 +142,29 @@ These 3 operations only work on two integers.
 
 #### Comparison Operations
 
-The following operations pop 2 elements off the stack and push 0 (if false) and 1 (if true) back on it.
+Equality and inequalities.
 
-| Word | Description |
-| --- | --- |
-| `=` | checks for equality |
-| `!=` | checks for not equals |
-| `>=` | greater than or equals |
-| `<=` | lesser than or equals |
-| `>` | greater than |
-| `<` | lesser than |
+The following operations pop 2 elements off the stack and push 0 (if false) and 1 (if true) back on it. Integer and character are treated as the same type in these operations.
+
+##### Equals (=) and Not Equals (!=)
+
+Integers and characters can be compared with each other. Strings can be compared as well.
 
 ```stackc
-1 1 = .    // prints 1 (true)
-0 1 = .    // prints 0 (false)
+  0  1  =    // 0 (false)
+'A' 65  =    // 1 (true)
+ 65 'a' !=   // 1 (true)
+'A' 'a' !=   // 1 (true)
+
+"Hello" "Hello " =   // 0 (false)
+"ABC"   "ABC"    =   // 1 (true)
+```
+
+##### Inequalities (>=) (<=) (>) (<)
+
+Integers are characters can be compared with each other. Strings cannot be compared.
+
+```stackc
 19 19 >= . // prints 1 (true)
 20 19 >= . // prints 1 (true)
 19 5 <= .  // prints 0 (false)
@@ -164,8 +173,6 @@ The following operations pop 2 elements off the stack and push 0 (if false) and 
 ```
 
 ```python
-print(1 == 1)    # prints True
-print(0 == 1)    # prints False
 print(19 >= 19)  # prints True
 print(20 >= 19)  # prints True
 print(19 <= 5)   # prints False
@@ -432,7 +439,7 @@ Do not include `.stc` when denoting the program.
 - recursion?
 
 - have access to a second stack?
-- string manipulation words
+- string manipulation words (concat, compare)
 
 - array
 
