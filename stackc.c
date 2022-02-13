@@ -34,6 +34,7 @@ typedef enum OPS {
   OP_LT,
   OP_POP,
   OP_SIZE,
+  OP_PSTACK,
   OP_DUP,
   OP_DROP,
   OP_SWAP,
@@ -251,6 +252,17 @@ int popStack(Stack* stack, Token* token) {
   stack->root = poppedNode->next;
   stack->size--;
   return poppedNode->value;
+}
+
+/* Prints contents of a stack. */
+void printStack(Stack* stack) {
+  Node *node = stack->root;
+  fprintf(stderr, "-- [%s] Stack (size: %d) --\n", thisName, stack->size);
+  while (node != NULL) {
+    fprintf(stderr, "%d ", node->value);
+    node = node->next;
+  }
+  fprintf(stderr, "EOS\n");
 }
 
 /* Initialise Definitions. */
@@ -564,6 +576,10 @@ void parsePOP(PARSE_FUNC_TYPE) {
 void parseSIZE(PARSE_FUNC_TYPE) {
   int size = stack->size;
   printf("%d", size);
+}
+
+void parsePSTACK(PARSE_FUNC_TYPE) {
+  printStack(stack);
 }
 
 /* ABC (n == 2) -> ABCBC */
@@ -886,7 +902,7 @@ void parseDEF(PARSE_FUNC_TYPE) {
 
 /* Parses a token. */
 void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, QueueElem* queueElem) {
-  assert(OPS_COUNT == 28, "Update control flow in parse().");
+  assert(OPS_COUNT == 29, "Update control flow in parse().");
   Token *token = queueElem->token;
   void (*parsers[OPS_COUNT]) (PARSE_FUNC_TYPE) = {
     parseUNKNOWN,
@@ -906,6 +922,7 @@ void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, Que
     parseLT,
     parsePOP,
     parseSIZE,
+    parsePSTACK,
     parseDUP,
     parseDROP,
     parseSWAP,
@@ -929,7 +946,7 @@ Token* makeToken(int row, int col, char *word) {
   token->value = 0;
   token->OP_TYPE = OP_UNKNOWN;
   strncpy(token->word, word, MAX_WORD_SIZE);
-  assert(OPS_COUNT == 28, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 29, "Update control flow in makeToken().");
   /* control flow to decide type of operation */
   char *types[OPS_COUNT] = {
     "", /* UNKNOWN */
@@ -949,6 +966,7 @@ Token* makeToken(int row, int col, char *word) {
     "<",
     ".",
     ".s",
+    ".stack",
     "dup",
     "drop",
     "swap",

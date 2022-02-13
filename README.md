@@ -6,6 +6,8 @@ The interpreter and testing framework is written in C.
 
 If anyone stumbles upon this and has any feedback/bug reports, feel free to open an issue regarding it. I would appreciate it, thank you!
 
+The source code is very much hacked together right now but that is because it is planned to be re-written at some point :D
+
 ## Quick Setup
 
 Minimally, you only need to download `stackc.c` and compile it with a C compiler. Then, you can run the executable with your program name as the argument.
@@ -180,6 +182,7 @@ The following words will print into standard output. Will have an error if the o
 | --- | --- |
 | `.` | pops from the top of the stack, removing and printing it. |
 | `.s` | prints the size of the current stack. Intended to be used for debugging interpreter. |
+| `.stack` | prints the stack. Intended to be used for debugging interpreter. |
 
 ```stackc
 'A' 1 2 3 "String"
