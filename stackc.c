@@ -570,6 +570,9 @@ void parsePOP(PARSE_FUNC_TYPE) {
     }
     int null = popStack(stack, token);
     assertWithToken(null == '\0', "String must have a null character at the end", token);
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", type);
+    assertWithToken(0, "Invalid type code (.)", token);
   }
 }
 
@@ -602,6 +605,7 @@ void parseDUP(PARSE_FUNC_TYPE) {
     Node *node = stack->root;
     copyNElements(stack, node, size + 3);
   } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", top_type);
     assertWithToken(0, "Invalid type code (dup)", token);
   }
 }
@@ -635,6 +639,7 @@ void parseSWAP(PARSE_FUNC_TYPE) {
   } else if (a_type->value == TYPE_STR) {
     numberToIterate = a_type->next->value + 2;
   } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", a_type->value);
     assertWithToken(0, "Invalid type code (swap)", token);
   }
   Node *before_b_type = a_type;
@@ -652,12 +657,13 @@ void parseSWAP(PARSE_FUNC_TYPE) {
   } else if (b_type->value == TYPE_STR) {
     numberToIterate = b_type->next->value + 2;
   } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", b_type->value);
     assertWithToken(0, "Invalid type code (swap)", token);
   }
   Node *before_after = before_b_type->next;
   while (numberToIterate-- > 0) {
-    assertWithToken(before_after != NULL, "Not enough elements to swap", token);
     before_after = before_after->next;
+    assertWithToken(before_after != NULL, "Not enough elements to swap", token);
   }
   stack->root = before_b_type->next;
   before_after->next = a_type;
@@ -674,14 +680,14 @@ void parseOVER(PARSE_FUNC_TYPE) {
   } else if (top_type == TYPE_STR) {
     numberToIterate = stack->root->next->value + 3;
   } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", top_type);
     assertWithToken(0, "Invalid type code (over)", token);
   }
   Node *node = stack->root;
   while (numberToIterate-- > 0) {
-    assertWithToken(node != NULL, "Not enough elements to over", token);
     node = node->next;
+    assertWithToken(node != NULL, "Not enough elements to over", token);
   }
-  assertWithToken(node != NULL, "Not enough elements to over", token);
   int second_type = node->value;
   if (second_type == TYPE_INT) {
     copyNElements(stack, node, 2);
@@ -691,17 +697,76 @@ void parseOVER(PARSE_FUNC_TYPE) {
     int size = node->next->value;
     copyNElements(stack, node, size + 3);
   } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", second_type);
     assertWithToken(0, "Invalid type code (over)", token);
   }
 }
 
 void parseROT(PARSE_FUNC_TYPE) {
-  int c = popStack(stack, token);
-  int b = popStack(stack, token);
-  int a = popStack(stack, token);
-  pushStack(stack, b);
-  pushStack(stack, c);
-  pushStack(stack, a);
+  int a_type = peekStack(stack, token);
+  Node *root = stack->root;
+  int numberToIterate = 0;
+  if (a_type == TYPE_INT) {
+    numberToIterate = 2;
+  } else if (a_type == TYPE_CHAR) {
+    numberToIterate = 2;
+  } else if (a_type == TYPE_STR) {
+    int size = root->next->value;
+    numberToIterate = size + 3;
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", a_type);
+    assertWithToken(0, "Invalid type code (rot)", token);
+  }
+  Node *node = root;
+  while (numberToIterate-- > 0) {
+    node = node->next;
+    assertWithToken(node != NULL, "Not enough elements to rot", token);
+  }
+  int b_type = node->value;
+  if (b_type == TYPE_INT) {
+    numberToIterate = 1;
+  } else if (b_type == TYPE_CHAR) {
+    numberToIterate = 1;
+  } else if (b_type == TYPE_STR) {
+    int size = node->next->value;
+    numberToIterate = size + 2;
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", b_type);
+    assertWithToken(0, "Invalid type code (rot)", token);
+  }
+  while (numberToIterate-- > 0) {
+    node = node->next;
+    assertWithToken(node != NULL, "Not enough elements to rot", token);
+  }
+  /* node is now before c-type. */
+  assertWithToken(node->next != NULL, "Not enough elements to rot", token);
+  int c_type = node->next->value;
+  if (c_type == TYPE_INT) {
+    int count = 2;
+    numberToIterate = count;
+    stack->size -= count;
+    copyNElements(stack, node->next, count);
+  } else if (c_type == TYPE_CHAR) {
+    int count = 2;
+    numberToIterate = count;
+    stack->size -= count;
+    copyNElements(stack, node->next, count);
+  } else if (c_type == TYPE_STR) {
+    int size = node->next->next->value;
+    int count = size + 3;
+    numberToIterate = count;
+    stack->size -= count;
+    copyNElements(stack, node->next, count);
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", c_type);
+    assertWithToken(0, "Invalid type code (rot)", token);
+  }
+  Node *after = node->next;
+  while (numberToIterate-- > 0) {
+    assertWithToken(after != NULL, "Not enough elements to rot", token);
+    after = after->next;
+  }
+  node->next = after;
 }
 
 void parseIF(PARSE_FUNC_TYPE) {

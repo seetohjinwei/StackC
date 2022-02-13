@@ -1,0 +1,6 @@
+[./stackc] Assertion Error: Not enough elements to rot
+-- [./stackc] Token --
+Position: 1 5
+OP_TYPE: 22
+Value: 0
+Word: rot

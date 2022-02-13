@@ -2,6 +2,6 @@
 
 -- [./stackc] Token --
 Position: 1 1
-OP_TYPE: 18
+OP_TYPE: 22
 Value: 0
-Word: dup
+Word: rot
