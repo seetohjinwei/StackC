@@ -46,6 +46,8 @@ typedef enum OPS {
   OP_THEN,
   OP_DEF,
   OP_END,
+  OP_CAST_INT,
+  OP_CAST_CHAR,
   OPS_COUNT /* size of enum OPS */
 } OPS;
 
@@ -916,6 +918,18 @@ void parseEND(PARSE_FUNC_TYPE) {
   assertWithToken(0, "`end` word without starting.", token);
 }
 
+void parseCASTINT(PARSE_FUNC_TYPE) {
+  int type = popStack(stack, token);
+  assertWithToken(type == TYPE_CHAR, "Only can cast char -> int.", token);
+  pushStack(stack, TYPE_INT);
+}
+
+void parseCASTCHAR(PARSE_FUNC_TYPE) {
+  int type = popStack(stack, token);
+  assertWithToken(type == TYPE_INT, "Only can cast int -> char.", token);
+  pushStack(stack, TYPE_CHAR);
+}
+
 int validateWordName(char *word) {
   char first = word[0];
   if ('0' <= first && first <= '9') {
@@ -967,7 +981,7 @@ void parseDEF(PARSE_FUNC_TYPE) {
 
 /* Parses a token. */
 void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, QueueElem* queueElem) {
-  assert(OPS_COUNT == 29, "Update control flow in parse().");
+  assert(OPS_COUNT == 31, "Update control flow in parse().");
   Token *token = queueElem->token;
   void (*parsers[OPS_COUNT]) (PARSE_FUNC_TYPE) = {
     parseUNKNOWN,
@@ -999,6 +1013,8 @@ void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, Que
     parseTHEN,
     parseDEF,
     parseEND,
+    parseCASTINT,
+    parseCASTCHAR,
   };
   parsers[token->OP_TYPE](stack, instructions, definitions, token);
 }
@@ -1011,7 +1027,7 @@ Token* makeToken(int row, int col, char *word) {
   token->value = 0;
   token->OP_TYPE = OP_UNKNOWN;
   strncpy(token->word, word, MAX_WORD_SIZE);
-  assert(OPS_COUNT == 29, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 31, "Update control flow in makeToken().");
   /* control flow to decide type of operation */
   char *types[OPS_COUNT] = {
     "", /* UNKNOWN */
@@ -1043,6 +1059,8 @@ Token* makeToken(int row, int col, char *word) {
     "then",
     "def",
     "end",
+    "(int)",
+    "(char)",
   };
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;

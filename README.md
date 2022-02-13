@@ -72,8 +72,6 @@ The types currently supported are integers, characters, strings.
 
 The type code for each object is pushed onto the stack after its value.
 
-Type casting words are available in the standard library.
-
 ### Integers
 
 Type Code: 0
@@ -99,6 +97,12 @@ The standard library defines `true` and `false` as constants mapped to `1` and `
 Type Code: 1
 
 `'a' 'A' 'B'` pushes `'a'`,`'A'`,`'B'` onto the stack in order.
+
+#### Type Casting
+
+`(int)` casts a character to its ascii value.
+
+`(char)` casts a integer to its ascii equivalent character. Note that there is no check for valid ascii range.
 
 #### Mathematical Operations
 
