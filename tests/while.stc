@@ -5,13 +5,13 @@ def FIZZ_MAX 100 end // using as a constant
 1
 while dup FIZZ_MAX <= then
   if dup 15 % 0 = then
-    "FizzBuzz\n" print
+    "FizzBuzz\n" .
   elseif dup 3 % 0 = then
-    "Fizz\n" print
+    "Fizz\n" .
   elseif dup 5 % 0 = then
-    "Buzz\n" print
+    "Buzz\n" .
   elseif 1 then
-    , "\n" print
+    , "\n" .
   end
   1 +
 end
@@ -44,7 +44,7 @@ drop
 
 5
 while dup 0 > then
-  "Hi\n" print
+  "Hi\n" .
   1 -
 end
 drop

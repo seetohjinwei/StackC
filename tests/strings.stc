@@ -1,15 +1,15 @@
-"Hello World\n" print
+"Hello World\n" .
 
-"This is\t tabbed!" print
+"This is\t tabbed!" .
 
-"C" "B" "A" print print print
+"C" "B" "A" . . .
 
-// "FA"A print -- is invalid
+// "FA"A . -- is invalid
 
-"ABC" print
+"ABC" .
 
-"\n\n\t\\\n" print
+"\n\n\t\\\n" .
 
-"// comment in a string\n" print
+"// comment in a string\n" .
 
-"\"Quotes are great\", bob\'s single quotes are also supported!\r\n" print
+"\"Quotes are great\", bob\'s single quotes are also supported!\r\n" .
