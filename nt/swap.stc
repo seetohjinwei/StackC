@@ -1,0 +1,32 @@
+// int int swap
+1 2 swap . . .s
+'\n' .
+
+// char char swap
+'a' 'b' swap . . .s
+'\n' .
+
+// string string swap
+"String 1" "String 2" swap . . .s
+'\n' .
+
+// int char swap
+1 'a' swap . . .s
+'\n' .
+// char int swap
+'a' 1 swap . . .s
+'\n' .
+
+// int string swap
+0 "s1" swap . . .s
+'\n' .
+// string int swap
+"s0" 1 swap . . .s
+'\n' .
+
+// char string swap
+'&' "s1" swap . . .s
+'\n' .
+// string char swap
+"s0" '^' swap . . .s
+'\n' .

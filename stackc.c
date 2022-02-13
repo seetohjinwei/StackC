@@ -608,10 +608,44 @@ void parseDROP(PARSE_FUNC_TYPE) {
 }
 
 void parseSWAP(PARSE_FUNC_TYPE) {
-  int a = popStack(stack, token);
-  int b = popStack(stack, token);
-  pushStack(stack, a);
-  pushStack(stack, b);
+  Node *a_type = stack->root;
+  assertWithToken(a_type != NULL, "Not enough elements to swap", token);
+  int numberToIterate = 0;
+  /* numberToIterate from a_type to the node before b_type */
+  if (a_type->value == TYPE_INT) {
+    numberToIterate = 1;
+  } else if (a_type->value == TYPE_CHAR) {
+    numberToIterate = 1;
+  } else if (a_type->value == TYPE_STR) {
+    numberToIterate = a_type->next->value + 2;
+  } else {
+    assertWithToken(0, "Invalid type code (swap)", token);
+  }
+  Node *before_b_type = a_type;
+  while (numberToIterate-- > 0) {
+    assertWithToken(before_b_type != NULL, "Not enough elements to swap", token);
+    before_b_type = before_b_type->next;
+  }
+  /* numberToIterate from b_type to the node before after */
+  Node *b_type = before_b_type->next;
+  assertWithToken(b_type != NULL, "Not enough elements to swap", token);
+  if (b_type->value == TYPE_INT) {
+    numberToIterate = 1;
+  } else if (b_type->value == TYPE_CHAR) {
+    numberToIterate = 1;
+  } else if (b_type->value == TYPE_STR) {
+    numberToIterate = b_type->next->value + 2;
+  } else {
+    assertWithToken(0, "Invalid type code (swap)", token);
+  }
+  Node *before_after = before_b_type->next;
+  while (numberToIterate-- > 0) {
+    assertWithToken(before_after != NULL, "Not enough elements to swap", token);
+    before_after = before_after->next;
+  }
+  stack->root = before_b_type->next;
+  before_after->next = a_type;
+  before_b_type->next = before_after->next;
 }
 
 void parseOVER(PARSE_FUNC_TYPE) {

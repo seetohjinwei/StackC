@@ -1,0 +1,6 @@
+[./stackc] Assertion Error: Not enough elements to swap
+-- [./stackc] Token --
+Position: 1 1
+OP_TYPE: 19
+Value: 0
+Word: swap
