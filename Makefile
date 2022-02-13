@@ -6,13 +6,13 @@ CFLAGS_FULL = -Wall -Wextra -pedantic
 default: run_tests
 
 verbose: stackc test
-	./test -dv nt
+	./test -dv tests
 
 update: stackc test
-	./test -du nt
+	./test -du tests
 
 run_tests: stackc test
-	./test -d nt
+	./test -d tests
 
 stackc: stackc.c
 	$(CC) $(CFLAGS) -o stackc stackc.c
