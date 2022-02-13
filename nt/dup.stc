@@ -1,0 +1,7 @@
+123 dup . . .s
+'\n' .
+'a' dup . . .s
+'\n' .
+"Duplicate\tString\n" dup . .
+
+.s

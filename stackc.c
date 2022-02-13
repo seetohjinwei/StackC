@@ -566,9 +566,28 @@ void parseSIZE(PARSE_FUNC_TYPE) {
   printf("%d", size);
 }
 
+/* ABC (n == 2) -> ABCBC */
+void copyNElements(Stack *stack, Node *node, int n) {
+  if (n == 0) {
+    return;
+  }
+  copyNElements(stack, node->next, n - 1);
+  pushStack(stack, node->value);
+}
+
 void parseDUP(PARSE_FUNC_TYPE) {
-  int top = peekStack(stack, token);
-  pushStack(stack, top);
+  int top_type = peekStack(stack, token);
+  if (top_type == TYPE_INT) {
+    copyNElements(stack, stack->root, 2);
+  } else if (top_type == TYPE_CHAR) {
+    copyNElements(stack, stack->root, 2);
+  } else if (top_type == TYPE_STR) {
+    int size = stack->root->next->value;
+    Node *node = stack->root;
+    copyNElements(stack, node, size + 3);
+  } else {
+    assertWithToken(0, "Invalid type at top of stack (dup)", token);
+  }
 }
 
 void parseDROP(PARSE_FUNC_TYPE) {
@@ -618,6 +637,8 @@ void parseIF(PARSE_FUNC_TYPE) {
     parseQueue(stack, instructions, definitions, queueElem);
   }
   assertWithToken(hasThen, "`then` not found after `if` or `elseif`", token);
+  int truth_type = popStack(stack);
+  assertWithToken(truth_type == TYPE_INT, "`then` must pop an integer/boolean.", token);
   int truth = popStack(stack);
   if (truth == 0) {
     /* Jump to next block (elseif or end) for evaluation. */
@@ -721,6 +742,8 @@ void parseWHILE(PARSE_FUNC_TYPE) {
     while (!isEmptyQueue(evalQueue)) {
       parseQueue(stack, evalQueue, definitions, pollQueue(evalQueue));
     }
+    int truth_type = popStack(stack);
+    assertWithToken(truth_type == TYPE_INT, "`then` must pop an integer/boolean.", token);
     int truth = popStack(stack);
     if (truth == 0) {
       break;
