@@ -651,23 +651,23 @@ void parseSWAP(PARSE_FUNC_TYPE) {
   Node *b_type = before_b_type->next;
   assertWithToken(b_type != NULL, "Not enough elements to swap", token);
   if (b_type->value == TYPE_INT) {
-    numberToIterate = 1;
+    numberToIterate = 2;
   } else if (b_type->value == TYPE_CHAR) {
-    numberToIterate = 1;
+    numberToIterate = 2;
   } else if (b_type->value == TYPE_STR) {
-    numberToIterate = b_type->next->value + 2;
+    numberToIterate = b_type->next->value + 3;
   } else {
     fprintf(stderr, "Invalid Type Code: %d\n", b_type->value);
     assertWithToken(0, "Invalid type code (swap)", token);
   }
-  Node *before_after = before_b_type->next;
+  Node *before_after = before_b_type;
   while (numberToIterate-- > 0) {
-    before_after = before_after->next;
     assertWithToken(before_after != NULL, "Not enough elements to swap", token);
+    before_after = before_after->next;
   }
   stack->root = before_b_type->next;
-  before_after->next = a_type;
   before_b_type->next = before_after->next;
+  before_after->next = a_type;
 }
 
 void parseOVER(PARSE_FUNC_TYPE) {
