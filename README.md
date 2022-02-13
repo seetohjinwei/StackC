@@ -233,7 +233,7 @@ This is    tabbed!ABC
 
 | Word | Description |
 | --- | --- |
-| `drop` | pops the first element |
+| `drop` | pops the first element without printing. |
 | `dup` | duplicates the first element |
 | `over` | duplicates the second element and pushes it to the top |
 | `rot` | rotates the first 3 elements, `1 2 3 rot` -> `2 3 1` |

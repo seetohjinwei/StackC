@@ -591,7 +591,20 @@ void parseDUP(PARSE_FUNC_TYPE) {
 }
 
 void parseDROP(PARSE_FUNC_TYPE) {
-  popStack(stack, token);
+  int type = popStack(stack, token);
+  if (type == TYPE_INT) {
+    popStack(stack, token);
+  } else if (type == TYPE_CHAR) {
+    popStack(stack, token);
+  } else if (type == TYPE_STR) {
+    int size = popStack(stack, token);
+    int i;
+    for (i = 0; i < size; i++) {
+      popStack(stack, token);
+    }
+    int null = popStack(stack, token);
+    assertWithToken(null == '\0', "String must have a null character at the end", token);
+  }
 }
 
 void parseSWAP(PARSE_FUNC_TYPE) {
