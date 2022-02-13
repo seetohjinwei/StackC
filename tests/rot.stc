@@ -1,0 +1,14 @@
+1 2 3 rot . . .
+'\n' .
+
+'a' 'b' 'c' rot . . .
+'\n' .
+
+"oneaa" "twof" "threeaa" rot . . .
+'\n' .
+
+1 'a' "CC" rot . . .
+"cc" 1 'a' rot . . .
+"@@@@@" '^' 2 rot . . .
+
+.stack

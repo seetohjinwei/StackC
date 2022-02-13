@@ -6,3 +6,6 @@
 
 "Push string."
 .s
+
+'a' 'b'
+.s

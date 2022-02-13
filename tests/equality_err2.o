@@ -1,0 +1,6 @@
+[./stackc] Assertion Error: Invalid types for =
+-- [./stackc] Token --
+Position: 1 8
+OP_TYPE: 9
+Value: 0
+Word: =

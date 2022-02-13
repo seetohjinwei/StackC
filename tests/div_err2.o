@@ -1,0 +1,6 @@
+[./stackc] Assertion Error: / is only defined for int
+-- [./stackc] Token --
+Position: 1 7
+OP_TYPE: 7
+Value: 0
+Word: /

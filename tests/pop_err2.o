@@ -1,3 +1,8 @@
 [./stackc] Assertion Error: Stack underflow while popping stack.
 
+-- [./stackc] Token --
+Position: 2 13
+OP_TYPE: 15
+Value: 0
+Word: .
 123

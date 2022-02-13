@@ -1,7 +1,7 @@
 def loop
   2
   while dup 0 > then
-    "loop\n" print
+    "loop\n" .
     1 -
   end
 end

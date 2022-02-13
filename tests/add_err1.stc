@@ -1,0 +1,3 @@
+'a' 'b' +  // Error: char char + not supported.
+
+.

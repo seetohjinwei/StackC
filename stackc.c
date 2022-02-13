@@ -9,9 +9,17 @@
 
 static char *thisName;
 
+typedef enum TYPE {
+  TYPE_INT,
+  TYPE_CHAR,
+  TYPE_STR,
+  TYPE_COUNT,
+} TYPE;
+
 typedef enum OPS {
   OP_UNKNOWN,
   OP_INT,
+  OP_CHAR,
   OP_STR,
   OP_ADD,
   OP_SUB,
@@ -25,9 +33,8 @@ typedef enum OPS {
   OP_GT,
   OP_LT,
   OP_POP,
-  OP_EMIT,
   OP_SIZE,
-  OP_PRINT,
+  OP_PSTACK,
   OP_DUP,
   OP_DROP,
   OP_SWAP,
@@ -39,6 +46,8 @@ typedef enum OPS {
   OP_THEN,
   OP_DEF,
   OP_END,
+  OP_CAST_INT,
+  OP_CAST_CHAR,
   OPS_COUNT /* size of enum OPS */
 } OPS;
 
@@ -239,12 +248,23 @@ int peekStack(Stack* stack, Token* token) {
 }
 
 /* Pops the first element of the stack. */
-int popStack(Stack* stack) {
-  assert(!isEmptyStack(stack), "Stack underflow while popping stack.\n");
+int popStack(Stack* stack, Token* token) {
+  assertWithToken(!isEmptyStack(stack), "Stack underflow while popping stack.\n", token);
   Node* poppedNode = stack->root;
   stack->root = poppedNode->next;
   stack->size--;
   return poppedNode->value;
+}
+
+/* Prints contents of a stack. */
+void printStack(Stack* stack) {
+  Node *node = stack->root;
+  fprintf(stderr, "-- [%s] Stack (size: %d) --\n", thisName, stack->size);
+  while (node != NULL) {
+    fprintf(stderr, "%d ", node->value);
+    node = node->next;
+  }
+  fprintf(stderr, "EOS\n");
 }
 
 /* Initialise Definitions. */
@@ -353,6 +373,12 @@ void parseUNKNOWN(PARSE_FUNC_TYPE) {
 
 void parseINT(PARSE_FUNC_TYPE) {
   pushStack(stack, token->value);
+  pushStack(stack, TYPE_INT);
+}
+
+void parseCHAR(PARSE_FUNC_TYPE) {
+  pushStack(stack, token->value);
+  pushStack(stack, TYPE_CHAR);
 }
 
 void parseSTR(PARSE_FUNC_TYPE) {
@@ -376,86 +402,180 @@ void parseSTR(PARSE_FUNC_TYPE) {
   }
   assertWithToken(hasEnd == 1, "String has no NULL terminating character.", token);
   while (!isEmptyStack(chars)) {
-    current = popStack(chars);
+    current = popStack(chars, token);
     pushStack(stack, current);
   }
   pushStack(stack, size);
+  pushStack(stack, TYPE_STR);
 }
 
+/* If both a or b are int, the result will be a int. Else, it will be a char. */
 void parseADD(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
-  int b = popStack(stack);
+  int a_type = popStack(stack, token);
+  int a = popStack(stack, token);
+  assertWithToken(a_type == TYPE_INT || a_type == TYPE_CHAR, "+ is only defined for int and char.", token);
+  int b_type = popStack(stack, token);
+  int b = popStack(stack, token);
+  assertWithToken(b_type == TYPE_INT || b_type == TYPE_CHAR, "+ is only defined for int and char.", token);
+  assertWithToken(a_type != TYPE_CHAR || b_type != TYPE_CHAR, "char char + not supported", token);
   pushStack(stack, b + a);
+  if (a_type == TYPE_INT && b_type == TYPE_INT) {
+    pushStack(stack, TYPE_INT);
+  } else {
+    pushStack(stack, TYPE_CHAR);
+  }
 }
 
 void parseSUB(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
-  int b = popStack(stack);
+  int a_type = popStack(stack, token);
+  int a = popStack(stack, token);
+  assertWithToken(a_type == TYPE_INT || a_type == TYPE_CHAR, "- is only defined for int and char.", token);
+  int b_type = popStack(stack, token);
+  int b = popStack(stack, token);
+  assertWithToken(b_type == TYPE_INT || b_type == TYPE_CHAR, "- is only defined for int and char.", token);
   pushStack(stack, b - a);
+  if (a_type == TYPE_INT && b_type == TYPE_INT) {
+    pushStack(stack, TYPE_INT);
+  } else if (a_type == TYPE_INT && b_type == TYPE_CHAR) {
+    pushStack(stack, TYPE_CHAR);
+  } else {
+    assertWithToken(0, "- is only defined for int int - and char int -", token);
+  }
 }
 
 void parseMUL(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
-  int b = popStack(stack);
+  int a_type = popStack(stack, token);
+  int a = popStack(stack, token);
+  int b_type = popStack(stack, token);
+  int b = popStack(stack, token);
+  assertWithToken(a_type == TYPE_INT && b_type == TYPE_INT, "* is only defined for int", token);
   pushStack(stack, b * a);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseDIV(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
-  int b = popStack(stack);
+  int a_type = popStack(stack, token);
+  int a = popStack(stack, token);
+  int b_type = popStack(stack, token);
+  int b = popStack(stack, token);
+  assertWithToken(a_type == TYPE_INT && b_type == TYPE_INT, "/ is only defined for int", token);
   pushStack(stack, b / a);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseREM(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
-  int b = popStack(stack);
+  int a_type = popStack(stack, token);
+  int a = popStack(stack, token);
+  int b_type = popStack(stack, token);
+  int b = popStack(stack, token);
+  assertWithToken(a_type == TYPE_INT && b_type == TYPE_INT, "% is only defined for int", token);
   pushStack(stack, b % a);
+  pushStack(stack, TYPE_INT);
+}
+
+int checkEquality(Stack *stack, Token *token) {
+  int a_type = popStack(stack, token);
+  if (a_type == TYPE_STR) {
+    int sizeA = popStack(stack, token);
+    char wordA[sizeA + 1];
+    int i;
+    for (i = 0; i < sizeA + 1; i++) {
+      wordA[i] = popStack(stack, token);
+    }
+    int b_type = popStack(stack, token);
+    assertWithToken(b_type == TYPE_STR, "Can only compare strings with each other (=)", token);
+    int sizeB = popStack(stack, token);
+    int result = sizeA == sizeB;
+    char wordB[sizeB + 1];
+    for (i = 0; i < sizeB + 1; i++) {
+      wordB[i] = popStack(stack, token);
+      if (result != 0 && wordA[i] != wordB[i]) {
+        result = 0;
+      }
+    }
+    return result;
+  } else {
+    int a = popStack(stack, token);
+    int b_type = popStack(stack, token);
+    int b = popStack(stack, token);
+    assertWithToken((a_type == TYPE_INT || a_type == TYPE_CHAR) && (b_type == TYPE_INT || b_type == TYPE_CHAR), "Invalid types for =", token);
+    return a == b;
+  }
 }
 
 void parseEQU(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
-  int b = popStack(stack);
-  pushStack(stack, a == b ? 1 : 0);
+  int result = checkEquality(stack, token);
+  pushStack(stack, result);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseNEQU(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
-  int b = popStack(stack);
-  pushStack(stack, a != b ? 1 : 0);
+  int result = !checkEquality(stack, token);
+  pushStack(stack, result);
+  pushStack(stack, TYPE_INT);
+}
+
+int checkLessThan(Stack *stack, Token *token, int swap) {
+  int b_type = popStack(stack, token);
+  int b = popStack(stack, token);
+  int a_type = popStack(stack, token);
+  int a = popStack(stack, token);
+  assertWithToken((a_type == TYPE_INT || a_type == TYPE_CHAR) && (b_type == TYPE_INT || b_type == TYPE_CHAR), "Invalid types for inequalities", token);
+  if (swap == 0) {
+    return a < b;
+  } else {
+    return b < a;
+  }
 }
 
 void parseGTE(PARSE_FUNC_TYPE) {
-  int b = popStack(stack);
-  int a = popStack(stack);
-  pushStack(stack, a >= b ? 1 : 0);
+  /* !(a < b) == b <= a == a <= b */
+  int result = !checkLessThan(stack, token, 0);
+  pushStack(stack, result);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseLTE(PARSE_FUNC_TYPE) {
-  int b = popStack(stack);
-  int a = popStack(stack);
-  pushStack(stack, a <= b ? 1 : 0);
+  /* !(b < a) == a <= b */
+  int result = !checkLessThan(stack, token, 1);
+  pushStack(stack, result);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseGT(PARSE_FUNC_TYPE) {
-  int b = popStack(stack);
-  int a = popStack(stack);
-  pushStack(stack, a > b ? 1 : 0);
+  /* b < a == a > b */
+  int result = checkLessThan(stack, token, 1);
+  pushStack(stack, result);
+  pushStack(stack, TYPE_INT);
 }
 
 void parseLT(PARSE_FUNC_TYPE) {
-  int b = popStack(stack);
-  int a = popStack(stack);
-  pushStack(stack, a < b ? 1 : 0);
+  /* a < b */
+  int result = checkLessThan(stack, token, 0);
+  pushStack(stack, result);
+  pushStack(stack, TYPE_INT);
 }
 
 void parsePOP(PARSE_FUNC_TYPE) {
-  int top = popStack(stack);
-  printf("%d", top);
-}
-
-void parseEMIT(PARSE_FUNC_TYPE) {
-  int top = popStack(stack);
-  printf("%c", top);
+  int type = popStack(stack, token);
+  if (type == TYPE_INT) {
+    int value = popStack(stack, token);
+    printf("%d", value);
+  } else if (type == TYPE_CHAR) {
+    int value = popStack(stack, token);
+    printf("%c", value);
+  } else if (type == TYPE_STR) {
+    int size = popStack(stack, token);
+    int i;
+    for (i = 0; i < size; i++) {
+      fputc(popStack(stack, token), stdout);
+    }
+    int null = popStack(stack, token);
+    assertWithToken(null == '\0', "String must have a null character at the end", token);
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", type);
+    assertWithToken(0, "Invalid type code (.)", token);
+  }
 }
 
 void parseSIZE(PARSE_FUNC_TYPE) {
@@ -463,46 +583,192 @@ void parseSIZE(PARSE_FUNC_TYPE) {
   printf("%d", size);
 }
 
-void parsePRINT(PARSE_FUNC_TYPE) {
-  int size = popStack(stack);
-  char word[MAX_WORD_SIZE];
-  int i;
-  for (i = 0; i < size + 1; i++) {
-    word[i] = popStack(stack);
+void parsePSTACK(PARSE_FUNC_TYPE) {
+  printStack(stack);
+}
+
+/* ABC (n == 2) -> ABCBC */
+void copyNElements(Stack *stack, Node *node, int n) {
+  if (n == 0) {
+    return;
   }
-  printf("%s", word);
+  copyNElements(stack, node->next, n - 1);
+  pushStack(stack, node->value);
 }
 
 void parseDUP(PARSE_FUNC_TYPE) {
-  int top = peekStack(stack, token);
-  pushStack(stack, top);
+  int top_type = peekStack(stack, token);
+  if (top_type == TYPE_INT) {
+    copyNElements(stack, stack->root, 2);
+  } else if (top_type == TYPE_CHAR) {
+    copyNElements(stack, stack->root, 2);
+  } else if (top_type == TYPE_STR) {
+    int size = stack->root->next->value;
+    Node *node = stack->root;
+    copyNElements(stack, node, size + 3);
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", top_type);
+    assertWithToken(0, "Invalid type code (dup)", token);
+  }
 }
 
 void parseDROP(PARSE_FUNC_TYPE) {
-  popStack(stack);
+  int type = popStack(stack, token);
+  if (type == TYPE_INT) {
+    popStack(stack, token);
+  } else if (type == TYPE_CHAR) {
+    popStack(stack, token);
+  } else if (type == TYPE_STR) {
+    int size = popStack(stack, token);
+    int i;
+    for (i = 0; i < size; i++) {
+      popStack(stack, token);
+    }
+    int null = popStack(stack, token);
+    assertWithToken(null == '\0', "String must have a null character at the end", token);
+  }
 }
 
 void parseSWAP(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
-  int b = popStack(stack);
-  pushStack(stack, a);
-  pushStack(stack, b);
+  Node *a_type = stack->root;
+  assertWithToken(a_type != NULL, "Not enough elements to swap", token);
+  int numberToIterate = 0;
+  /* numberToIterate from a_type to the node before b_type */
+  if (a_type->value == TYPE_INT) {
+    numberToIterate = 1;
+  } else if (a_type->value == TYPE_CHAR) {
+    numberToIterate = 1;
+  } else if (a_type->value == TYPE_STR) {
+    numberToIterate = a_type->next->value + 2;
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", a_type->value);
+    assertWithToken(0, "Invalid type code (swap)", token);
+  }
+  Node *before_b_type = a_type;
+  while (numberToIterate-- > 0) {
+    assertWithToken(before_b_type != NULL, "Not enough elements to swap", token);
+    before_b_type = before_b_type->next;
+  }
+  /* numberToIterate from b_type to the node before after */
+  Node *b_type = before_b_type->next;
+  assertWithToken(b_type != NULL, "Not enough elements to swap", token);
+  if (b_type->value == TYPE_INT) {
+    numberToIterate = 2;
+  } else if (b_type->value == TYPE_CHAR) {
+    numberToIterate = 2;
+  } else if (b_type->value == TYPE_STR) {
+    numberToIterate = b_type->next->value + 3;
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", b_type->value);
+    assertWithToken(0, "Invalid type code (swap)", token);
+  }
+  Node *before_after = before_b_type;
+  while (numberToIterate-- > 0) {
+    assertWithToken(before_after != NULL, "Not enough elements to swap", token);
+    before_after = before_after->next;
+  }
+  stack->root = before_b_type->next;
+  before_b_type->next = before_after->next;
+  before_after->next = a_type;
 }
 
 void parseOVER(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
-  int second = peekStack(stack, token);
-  pushStack(stack, a);
-  pushStack(stack, second);
+  int top_type = peekStack(stack, token);
+  int numberToIterate = 0;
+  if (top_type == TYPE_INT) {
+    numberToIterate = 2;
+  } else if (top_type == TYPE_CHAR) {
+    numberToIterate = 2;
+  } else if (top_type == TYPE_STR) {
+    numberToIterate = stack->root->next->value + 3;
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", top_type);
+    assertWithToken(0, "Invalid type code (over)", token);
+  }
+  Node *node = stack->root;
+  while (numberToIterate-- > 0) {
+    node = node->next;
+    assertWithToken(node != NULL, "Not enough elements to over", token);
+  }
+  int second_type = node->value;
+  if (second_type == TYPE_INT) {
+    copyNElements(stack, node, 2);
+  } else if (second_type == TYPE_CHAR) {
+    copyNElements(stack, node, 2);
+  } else if (second_type == TYPE_STR) {
+    int size = node->next->value;
+    copyNElements(stack, node, size + 3);
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", second_type);
+    assertWithToken(0, "Invalid type code (over)", token);
+  }
 }
 
 void parseROT(PARSE_FUNC_TYPE) {
-  int c = popStack(stack);
-  int b = popStack(stack);
-  int a = popStack(stack);
-  pushStack(stack, b);
-  pushStack(stack, c);
-  pushStack(stack, a);
+  int a_type = peekStack(stack, token);
+  Node *root = stack->root;
+  int numberToIterate = 0;
+  if (a_type == TYPE_INT) {
+    numberToIterate = 2;
+  } else if (a_type == TYPE_CHAR) {
+    numberToIterate = 2;
+  } else if (a_type == TYPE_STR) {
+    int size = root->next->value;
+    numberToIterate = size + 3;
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", a_type);
+    assertWithToken(0, "Invalid type code (rot)", token);
+  }
+  Node *node = root;
+  while (numberToIterate-- > 0) {
+    node = node->next;
+    assertWithToken(node != NULL, "Not enough elements to rot", token);
+  }
+  int b_type = node->value;
+  if (b_type == TYPE_INT) {
+    numberToIterate = 1;
+  } else if (b_type == TYPE_CHAR) {
+    numberToIterate = 1;
+  } else if (b_type == TYPE_STR) {
+    int size = node->next->value;
+    numberToIterate = size + 2;
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", b_type);
+    assertWithToken(0, "Invalid type code (rot)", token);
+  }
+  while (numberToIterate-- > 0) {
+    node = node->next;
+    assertWithToken(node != NULL, "Not enough elements to rot", token);
+  }
+  /* node is now before c-type. */
+  assertWithToken(node->next != NULL, "Not enough elements to rot", token);
+  int c_type = node->next->value;
+  if (c_type == TYPE_INT) {
+    int count = 2;
+    numberToIterate = count;
+    stack->size -= count;
+    copyNElements(stack, node->next, count);
+  } else if (c_type == TYPE_CHAR) {
+    int count = 2;
+    numberToIterate = count;
+    stack->size -= count;
+    copyNElements(stack, node->next, count);
+  } else if (c_type == TYPE_STR) {
+    int size = node->next->next->value;
+    int count = size + 3;
+    numberToIterate = count;
+    stack->size -= count;
+    copyNElements(stack, node->next, count);
+  } else {
+    fprintf(stderr, "Invalid Type Code: %d\n", c_type);
+    assertWithToken(0, "Invalid type code (rot)", token);
+  }
+  Node *after = node->next;
+  while (numberToIterate-- > 0) {
+    assertWithToken(after != NULL, "Not enough elements to rot", token);
+    after = after->next;
+  }
+  node->next = after;
 }
 
 void parseIF(PARSE_FUNC_TYPE) {
@@ -525,7 +791,9 @@ void parseIF(PARSE_FUNC_TYPE) {
     parseQueue(stack, instructions, definitions, queueElem);
   }
   assertWithToken(hasThen, "`then` not found after `if` or `elseif`", token);
-  int truth = popStack(stack);
+  int truth_type = popStack(stack, token);
+  assertWithToken(truth_type == TYPE_INT, "`then` must pop an integer/boolean.", token);
+  int truth = popStack(stack, token);
   if (truth == 0) {
     /* Jump to next block (elseif or end) for evaluation. */
     int ends = 1, jumpType;
@@ -628,7 +896,9 @@ void parseWHILE(PARSE_FUNC_TYPE) {
     while (!isEmptyQueue(evalQueue)) {
       parseQueue(stack, evalQueue, definitions, pollQueue(evalQueue));
     }
-    int truth = popStack(stack);
+    int truth_type = popStack(stack, token);
+    assertWithToken(truth_type == TYPE_INT, "`then` must pop an integer/boolean.", token);
+    int truth = popStack(stack, token);
     if (truth == 0) {
       break;
     }
@@ -648,11 +918,23 @@ void parseEND(PARSE_FUNC_TYPE) {
   assertWithToken(0, "`end` word without starting.", token);
 }
 
+void parseCASTINT(PARSE_FUNC_TYPE) {
+  int type = popStack(stack, token);
+  assertWithToken(type == TYPE_CHAR, "Only can cast char -> int.", token);
+  pushStack(stack, TYPE_INT);
+}
+
+void parseCASTCHAR(PARSE_FUNC_TYPE) {
+  int type = popStack(stack, token);
+  assertWithToken(type == TYPE_INT, "Only can cast int -> char.", token);
+  pushStack(stack, TYPE_CHAR);
+}
+
 int validateWordName(char *word) {
   char first = word[0];
-  if ('0' <= first || first <= '9') {
+  if ('0' <= first && first <= '9') {
     /* first character cannot be a number */
-    return 1;
+    return 0;
   }
   /* no character in the word can be any of these */
   #define invalidCharsSize 2
@@ -699,11 +981,12 @@ void parseDEF(PARSE_FUNC_TYPE) {
 
 /* Parses a token. */
 void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, QueueElem* queueElem) {
-  assert(OPS_COUNT == 29, "Update control flow in parse().");
+  assert(OPS_COUNT == 31, "Update control flow in parse().");
   Token *token = queueElem->token;
   void (*parsers[OPS_COUNT]) (PARSE_FUNC_TYPE) = {
     parseUNKNOWN,
     parseINT,
+    parseCHAR,
     parseSTR,
     parseADD,
     parseSUB,
@@ -717,9 +1000,8 @@ void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, Que
     parseGT,
     parseLT,
     parsePOP,
-    parseEMIT,
     parseSIZE,
-    parsePRINT,
+    parsePSTACK,
     parseDUP,
     parseDROP,
     parseSWAP,
@@ -731,6 +1013,8 @@ void parseQueue(Stack* stack, Queue* instructions, Definitions* definitions, Que
     parseTHEN,
     parseDEF,
     parseEND,
+    parseCASTINT,
+    parseCASTCHAR,
   };
   parsers[token->OP_TYPE](stack, instructions, definitions, token);
 }
@@ -743,11 +1027,12 @@ Token* makeToken(int row, int col, char *word) {
   token->value = 0;
   token->OP_TYPE = OP_UNKNOWN;
   strncpy(token->word, word, MAX_WORD_SIZE);
-  assert(OPS_COUNT == 29, "Update control flow in makeToken().");
+  assert(OPS_COUNT == 31, "Update control flow in makeToken().");
   /* control flow to decide type of operation */
   char *types[OPS_COUNT] = {
     "", /* UNKNOWN */
     "", /* INT */
+    "", /* CHAR */
     "", /* STR */
     "+",
     "-",
@@ -761,9 +1046,8 @@ Token* makeToken(int row, int col, char *word) {
     ">",
     "<",
     ".",
-    "emit",
     ".s",
-    "print",
+    ".stack",
     "dup",
     "drop",
     "swap",
@@ -775,11 +1059,13 @@ Token* makeToken(int row, int col, char *word) {
     "then",
     "def",
     "end",
+    "(int)",
+    "(char)",
   };
   if (isNumber(word)) {
     token->OP_TYPE = OP_INT;
     token->value = atoi(word);
-    /* isString is overridden anyways. */
+    /* isString and isCharacter are overridden anyways. */
   } else {
     int i;
     for (i = 0; i < OPS_COUNT; i++) {
@@ -844,6 +1130,7 @@ int main(int argc, char* argv[]) {
   ssize_t lengthOfLine;
   size_t len = 0;
   int parsingString = 0; /* Different behaviour when parsing strings. */
+  int parsingChar = 0; /* Different behaviour when parsing chars. */
   while ((lengthOfLine = getline(&line, &len, source)) != -1) {
     int wordIndex = 0;
     memset(word, 0, sizeof(word));
@@ -851,7 +1138,40 @@ int main(int argc, char* argv[]) {
     for (lineIndex = 0; lineIndex < lengthOfLine; lineIndex++) {
       char c = line[lineIndex];
       /* Catch comments and ignore the rest (by exiting for loop). */
-      if (parsingString == 1) {
+      if (c == '\'' && wordIndex == 0) {
+        char next = line[++lineIndex];
+        if (next == '\\') {
+          char escape = line[++lineIndex];
+          if (escape == '\\') {
+            next = '\\';
+          } else if (escape == 'n') {
+            next = '\n';
+          } else if (escape == 'r') {
+            next = '\r';
+          } else if (escape == 't') {
+            next = '\t';
+          } else if (escape == '"') {
+            next = '"';
+          } else if (escape == '\'') {
+            next = '\'';
+          } else {
+            fprintf(stderr, "[%s] Ascii of: %d\n", thisName, escape);
+            assert(0, "Unknown Escape Character");
+          }
+        }
+        char *assertMessage;
+        asprintf(&assertMessage, "Invalid character at %d %d", row + 1, lineIndex - wordIndex + 1);
+        assert(line[++lineIndex] == '\'', assertMessage);
+        word[0] = next;
+        word[1] = '\0';
+        /* C ensures that next is a valid ascii because it is typed as a char here. */
+        Token *token = makeToken(row + 1, lineIndex - wordIndex + 1, word);
+        pushQueue(instructions, token);
+        /* We already know this is a character. */
+        token->OP_TYPE = OP_CHAR;
+        token->value = next;
+        wordIndex = 0;
+      } else if (parsingString == 1) {
         if (c == '\\') {
           /* Handle Escape Characters */
           char next = line[++lineIndex];
@@ -874,7 +1194,7 @@ int main(int argc, char* argv[]) {
         } else if (c == '"') {
           word[wordIndex++] = '\0';
           parsingString = 0;
-          Token *token = makeToken(row, lineIndex - wordIndex, word);
+          Token *token = makeToken(row + 1, lineIndex - wordIndex + 1, word);
           pushQueue(instructions, token);
           /* We already know this is a string. */
           token->OP_TYPE = OP_STR;
@@ -884,7 +1204,7 @@ int main(int argc, char* argv[]) {
           assert(wordIndex < MAX_WORD_SIZE, "Word is too long!");
           word[wordIndex++] = c;
         }
-      } else if (c == '"') {
+      } else if (c == '"' && parsingChar == 0) {
         parsingString = 1;
       } else if (c == '/' && lineIndex < lengthOfLine - 1 && line[lineIndex+1] == '/') {
         /* Catch comments and stop parsing. */

@@ -6,13 +6,15 @@ The interpreter and testing framework is written in C.
 
 If anyone stumbles upon this and has any feedback/bug reports, feel free to open an issue regarding it. I would appreciate it, thank you!
 
+The source code is very much hacked together right now but that is because it is planned to be re-written at some point :D
+
 ## Quick Setup
 
 Minimally, you only need to download `stackc.c` and compile it with a C compiler. Then, you can run the executable with your program name as the argument.
 
 The program name must have an extension of ".stc".
 
-```
+```shell
 gcc -o stackc stackc.c
 ./stackc <your_program>.stc
 ```
@@ -27,11 +29,11 @@ Feel free to check out the source code for more details.
 
 Words must be separated with either a ` ` (space character) or `\n` (new line). You can have multiple spaces or new line characters (even mixed around) successively, they are treated as a single separator.
 
-```
+```stackc
 1    2 + .
 ```
 
-```
+```stackc
 1
 2 +
 
@@ -42,11 +44,11 @@ The above two programs are equivalent (aside from readability).
 
 FYI: Words are hashed by their first character, so that searches are a bit more performant.
 
-### Comments
+## Comments
 
 Comments are declared by `//`, every character after `//` is ignored by the interpreter.
 
-```
+```stackc
 // This is a comment.
 // Anything after `//` is ignored.
 // . . . . .
@@ -62,135 +64,165 @@ Comments are declared by `//`, every character after `//` is ignored by the inte
 print(chr(65)) # prints an `A` character
 ```
 
-### Integer
+## Types
+
+StackC uses a simple inferred typing system to allow operations to understand what type of object they are computing, should they care about it.
+
+The types currently supported are integers, characters, strings.
+
+The type code for each object is pushed onto the stack after its value.
+
+### Integers
+
+Type Code: 0
 
 Pushes the integer onto the stack. Integers are 32-bit integers. Negative integers are supported too.
 
 `1 2 3 100 -2` pushes `1`,`2`,`3`,`1000`,`-2` onto the stack in order.
 
-## Booleans
+### Booleans
+
+Type Code: 0 (pseudo-type based on integer)
+
+Booleans are a pseudo-type. They are typed as integers but simply treated differently.
 
 `0` is considered `false`.
 
 `1` (or any non-zero integer) is considered `true`. However, `1` is preferred.
 
-### Mathematical Operations
+The standard library defines `true` and `false` as constants mapped to `1` and `0` respectively for convenience.
+
+### Characters
+
+Type Code: 1
+
+`'a' 'A' 'B'` pushes `'a'`,`'A'`,`'B'` onto the stack in order.
+
+#### Type Casting
+
+`(int)` casts a character to its ascii value.
+
+`(char)` casts a integer to its ascii equivalent character. Note that there is no check for valid ascii range.
+
+#### Mathematical Operations
 
 Used as in Reverse Polish Notation, e.g. `1 2 +` (RPN) === `1 + 2` (usual infix notation).
 
 The follow operations pop 2 elements off the stack and push the result back on it.
 
-| Word | Description |
-| --- | --- |
-| `+` | adds the two elements |
-| `-` | subtracts the two elements |
-| `*` | multiplies the two elements |
-| `/` | floor divides the two elements |
-| `%` | remainder of the two elements |
+##### Addition (+)
 
-```
-1 2 + .  // prints 3
-9 3 - .  // prints 6
-5 6 * .  // prints 30
-50 7 / . // prints 7
-50 7 % . // prints 1
+Adding 2 integers will result in an integer. If either of the 2 objects are characters, the result will be a character. Cannot add 2 characters.
+
+Note that valid character is not guranteed.
+
+```stackc
+ 1   2  +  //  3
+'a'  1  +  // 'b'
+ 2  'c' +  // 'a'
+'a' 'b' +  // Error: char char + not supported.
 ```
 
-```python
-print(1 + 2)     # prints 3
-print(9 - 3)     # prints 6
-print(5 * 6)     # prints 30
-print(50 // 7)   # prints 7
-print(50 % 7)    # prints 1
+##### Subtraction (-)
+
+Subtracting 2 integers will result in an integer. Character subtract integer will result in a character.
+
+Note that valid character is not guranteed.
+
+```stackc
+ 5   1  -  //  4
+'z'  5  -  // 'u'
+ 2  'c' -  // Error: int char - not supported.
+'a' 'b' -  // Error: char char - not supported.
 ```
 
-### Comparison Operations
+##### Multiplication (*), Division (/), Remainder (%)
 
-The following operations pop 2 elements off the stack and push 0 (if false) and 1 (if true) back on it.
+These 3 operations only work on two integers.
 
-| Word | Description |
-| --- | --- |
-| `=` | checks for equality |
-| `!=` | checks for not equals |
-| `>=` | greater than or equals |
-| `<=` | lesser than or equals |
-| `>` | greater than |
-| `<` | lesser than |
-
-```
-1 1 = .    // prints 1 (true)
-0 1 = .    // prints 0 (false)
-19 19 >= . // prints 1 (true)
-20 19 >= . // prints 1 (true)
-19 5 <= .  // prints 0 (false)
-2 1 > .    // prints 1 (true)
-5 5 < .    // prints 0 (false)
+```stackc
+ 3 3 *   // 9
+13 4 /   // 3
+13 4 %   // 1
 ```
 
-```python
-print(1 == 1)    # prints True
-print(0 == 1)    # prints False
-print(19 >= 19)  # prints True
-print(20 >= 19)  # prints True
-print(19 <= 5)   # prints False
-print(2 > 1)     # prints True
-print(5 < 5)     # prints False
+#### Comparison Operations
+
+Equality and inequalities.
+
+The following operations pop 2 elements off the stack and push 0 (if false) and 1 (if true) back on it. Integer and character are treated as the same type in these operations.
+
+##### Equals (=) and Not Equals (!=)
+
+Integers and characters can be compared with each other. Strings can be compared as well.
+
+```stackc
+  0  1   =    // 0 (false)
+'A' 65   =    // 1 (true)
+ 65 'a' !=   // 1 (true)
+'A' 'a' !=   // 1 (true)
+
+"Hello" "Hello " =   // 0 (false)
+"ABC"   "ABC"    =   // 1 (true)
 ```
 
-### Printing to Standard Output
+##### Inequalities (>=) (<=) (>) (<)
+
+Integers are characters can be compared with each other. Strings cannot be compared.
+
+```stackc
+19 19 >= .   // prints 1 (true)
+20 19 >= .   // prints 1 (true)
+19  5 <= .   // prints 0 (false)
+ 2  1 >  .   // prints 1 (true)
+ 5  5 <  .   // prints 0 (false)
+```
+
+#### Printing to Standard Output
 
 The following words will print into standard output. Will have an error if the operation causes stack underflow.
 
 | Word | Description |
 | --- | --- |
-| `.` | pops from the top of the stack, removing it, printing the integer. |
-| `emit` | similar to `.` but prints the ASCII equivalent instead. |
+| `.` | pops from the top of the stack, removing and printing it. |
 | `.s` | prints the size of the current stack. Intended to be used for debugging interpreter. |
+| `.stack` | prints the stack. Intended to be used for debugging interpreter. |
 
-```
-65 1 2 3
-.s   // prints 4
+```stackc
+'A' 1 2 3 "String"
+.s   // prints 17
+.    // prints String
 .    // prints 3
 .    // prints 2
 .    // prints 1
-emit // prints `A`
-.s   // prints 0
-```
-
-```python
-stack = [65, 1, 2, 3]
-print(stack[-1])           # prints 3
-print(len(stack))          # prints 4
-print(stack.pop())         # prints 3
-print(stack.pop())         # prints 2
-print(stack.pop())         # prints 1
-print(chr(stack.pop()))    # prints `A`
-print(len(stack))          # prints 0
+.    // prints A
 ```
 
 ### Strings
 
+Type code: 2
+
 Strings are saved by characters in the stack.
 
-`"ABC"` pushes 0, 67, 66, 65, 3 onto the stack.
+`"ABC"` pushes 0, 67, 66, 65, 3 (size), 2 (typecode) onto the stack.
 
-The string size will be at the top of the stack, followed by `n` characters in ascii and then the terminating NULL character.
+Type code will be on top of the stack, followed by the string size, followed by `n` characters in ascii and then the terminating NULL character.
 
-`print` pops a string off the stack and prints it to standard output.
+`.` pops a string off the stack and prints it to standard output.
 
 Multi-line strings are not directly supported. However you can use `\n` for a new line.
 
-```
-"Hello World\n" print
+```stackc
+"Hello World\n" .
 
-"This is\t tabbed!" print
+"This is\t tabbed!" .
 
-"C" "B" "A" print print print
+"C" "B" "A" . . .
 ```
 
 will print the following to the standard output
 
-```
+```txt
 Hello World
 This is    tabbed!ABC
 ```
@@ -204,20 +236,19 @@ This is    tabbed!ABC
 | `\r` | Carriage return |
 | `\t` | New tab |
 
-
-### Stack Manipulation
+## Stack Manipulation
 
 | Word | Description |
 | --- | --- |
-| `drop` | pops the first element |
+| `drop` | pops the first element without printing. |
 | `dup` | duplicates the first element |
 | `over` | duplicates the second element and pushes it to the top |
 | `rot` | rotates the first 3 elements, `1 2 3 rot` -> `2 3 1` |
 | `swap` | swaps the first two elements |
 
-### Control Flow
+## Control Flow
 
-#### If Statement
+### If Statement
 
 The words between `if` and `then` are always evaluated. When `then` is encountered, the first element is popped off the stack and evaluated as a boolean. If true, the block between `then` and the next `elseif` or `end` is evaluated. After which, the evaluator will jump to the `end` word. If false, the evaluator will jump to the next `elseif` block to evaluate it.
 
@@ -225,7 +256,7 @@ If you want to simulate a regular `else`, as in other languages, just use a `els
 
 Nested if/else are also supported!
 
-```
+```stackc
 if 0 then          // evaluates to false
   12 .
 elseif 1 then      // evaluates to true
@@ -251,7 +282,7 @@ else:                  # not even valid python to have 2 else blocks
   print(45)            # never evaluated
 ```
 
-#### While Loop
+### While Loop
 
 The words between `while` and `then` are evaluated at the start of each loop. After which, an integer is popped off the stack and evaluated as a boolean. If this is false, the loop ends. If this is true, the words between `then` and `end` are evaluated. And this will repeat indefinitely (remember to update your control variable).
 
@@ -259,7 +290,7 @@ Nested loops are supported, go crazy (but maybe not *too* crazy)!
 
 The following program is FizzBuzz from 1 to 100.
 
-```
+```stackc
 1
 while dup 100 <= then
   if dup 15 % 0 = then
@@ -290,9 +321,13 @@ while x <= 100:
   x += 1
 ```
 
-### Defining Words
+## Defining Words
 
 It is possible to define custom words, which is useful for repeated operations. It is also possible to define "constants" this way as well, however, at the moment, the interpreter does not optimise for this.
+
+Rules:
+1. Words cannot start with a number.
+2. Words cannot contain `'` and `"`.
 
 Do note that recursion is not supported. Weird things may happen (probably segfault). StackC *may* support recursion in the future, depending on how hard it is to implement.
 
@@ -304,7 +339,7 @@ Ideally, one adds in a "function signature" as a comment to denote how many elem
 
 The following program computes the nth fibonaci number (this is what I came up with but there might be a better way). It is kinda tricky to have to juggle with 3 values in the stack.
 
-```
+```stackc
 // duplicates top 2 elements
 def dup2 // A, B -> A, B, A, B
   over over
@@ -327,7 +362,7 @@ end
 
 is equivalent to
 
-```
+```python
 def fib(n):
   n -= 1
   a = 0
@@ -366,13 +401,16 @@ Flags must be declared before the directory/files.
 
 Do not include `.stc` when denoting the program.
 
-`./test -d tests` -> runs all tests
+```shell
+./test -d tests # runs all tests
 
-`./test -dv tests` or `./test -d -v tests` -> runs all tests with verbose output
+./test -dv tests
+./test -d -v tests # runs all tests with verbose output
 
-`./test -u tests/if` -> runs `tests/if.stc` and updates `tests/if.o` with the current output
+./test -u tests/if # runs `tests/if.stc` and updates `tests/if.o` with the current output
 
-`./test tests/if tests/while` -> runs `tests/if.stc` and compares with `tests/if.o` and same with `while`
+./test tests/if tests/while # runs `tests/if.stc` and compares with `tests/if.o` and same with `while`
+```
 
 ### Makefile Arguments
 
@@ -384,11 +422,6 @@ Do not include `.stc` when denoting the program.
 | `clean` | Cleans up `stackc` and `test` executables. |
 
 ## TODO
-
-- simple type system (int, char, string, everything on the stack has a type)
-- every object is type-value-...-values
-- 'A' to register a character
-- write tests/push.stc test for char pushing
 
 - break statement to jump to the end
 - import/include files so we can actually import and use the stdlib.stc!!!
@@ -403,7 +436,7 @@ Do not include `.stc` when denoting the program.
 - recursion?
 
 - have access to a second stack?
-- string manipulation words
+- string manipulation words (concat, compare)
 
 - array
 

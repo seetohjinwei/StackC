@@ -1,0 +1,6 @@
+[./stackc] Assertion Error: Only can cast int -> char.
+-- [./stackc] Token --
+Position: 1 5
+OP_TYPE: 30
+Value: 0
+Word: (char)
