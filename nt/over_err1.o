@@ -1,0 +1,7 @@
+[./stackc] Assertion Error: Stack underflow while peeking stack.
+
+-- [./stackc] Token --
+Position: 1 1
+OP_TYPE: 20
+Value: 0
+Word: over

@@ -1,0 +1,32 @@
+// int int over
+1 2 over . . . .s
+'\n' .
+
+// char char over
+'a' 'b' over . . . .s
+'\n' .
+
+// string string over
+"String 1" "String 2" over . . . .s
+'\n' .
+
+// int char over
+1 'a' over . . . .s
+'\n' .
+// char int over
+'a' 1 over . . . .s
+'\n' .
+
+// int string over
+0 "s1" over . . . .s
+'\n' .
+// string int over
+"s0" 1 over . . . .s
+'\n' .
+
+// char string over
+'&' "s1" over . . . .s
+'\n' .
+// string char over
+"s0" '^' over . . . .s
+'\n' .

@@ -586,7 +586,7 @@ void parseDUP(PARSE_FUNC_TYPE) {
     Node *node = stack->root;
     copyNElements(stack, node, size + 3);
   } else {
-    assertWithToken(0, "Invalid type at top of stack (dup)", token);
+    assertWithToken(0, "Invalid type code (dup)", token);
   }
 }
 
@@ -649,10 +649,34 @@ void parseSWAP(PARSE_FUNC_TYPE) {
 }
 
 void parseOVER(PARSE_FUNC_TYPE) {
-  int a = popStack(stack, token);
-  int second = peekStack(stack, token);
-  pushStack(stack, a);
-  pushStack(stack, second);
+  int top_type = peekStack(stack, token);
+  int numberToIterate = 0;
+  if (top_type == TYPE_INT) {
+    numberToIterate = 2;
+  } else if (top_type == TYPE_CHAR) {
+    numberToIterate = 2;
+  } else if (top_type == TYPE_STR) {
+    numberToIterate = stack->root->next->value + 3;
+  } else {
+    assertWithToken(0, "Invalid type code (over)", token);
+  }
+  Node *node = stack->root;
+  while (numberToIterate-- > 0) {
+    assertWithToken(node != NULL, "Not enough elements to over", token);
+    node = node->next;
+  }
+  assertWithToken(node != NULL, "Not enough elements to over", token);
+  int second_type = node->value;
+  if (second_type == TYPE_INT) {
+    copyNElements(stack, node, 2);
+  } else if (second_type == TYPE_CHAR) {
+    copyNElements(stack, node, 2);
+  } else if (second_type == TYPE_STR) {
+    int size = node->next->value;
+    copyNElements(stack, node, size + 3);
+  } else {
+    assertWithToken(0, "Invalid type code (over)", token);
+  }
 }
 
 void parseROT(PARSE_FUNC_TYPE) {
