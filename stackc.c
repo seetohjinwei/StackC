@@ -245,8 +245,8 @@ int peekStack(Stack* stack, Token* token) {
 }
 
 /* Pops the first element of the stack. */
-int popStack(Stack* stack) {
-  assert(!isEmptyStack(stack), "Stack underflow while popping stack.\n");
+int popStack(Stack* stack, Token* token) {
+  assertWithToken(!isEmptyStack(stack), "Stack underflow while popping stack.\n", token);
   Node* poppedNode = stack->root;
   stack->root = poppedNode->next;
   stack->size--;
@@ -388,7 +388,7 @@ void parseSTR(PARSE_FUNC_TYPE) {
   }
   assertWithToken(hasEnd == 1, "String has no NULL terminating character.", token);
   while (!isEmptyStack(chars)) {
-    current = popStack(chars);
+    current = popStack(chars, token);
     pushStack(stack, current);
   }
   pushStack(stack, size);
@@ -397,11 +397,11 @@ void parseSTR(PARSE_FUNC_TYPE) {
 
 /* If both a or b are int, the result will be a int. Else, it will be a char. */
 void parseADD(PARSE_FUNC_TYPE) {
-  int a_type = popStack(stack);
-  int a = popStack(stack);
+  int a_type = popStack(stack, token);
+  int a = popStack(stack, token);
   assertWithToken(a_type == TYPE_INT || a_type == TYPE_CHAR, "+ is only defined for int and char.", token);
-  int b_type = popStack(stack);
-  int b = popStack(stack);
+  int b_type = popStack(stack, token);
+  int b = popStack(stack, token);
   assertWithToken(b_type == TYPE_INT || b_type == TYPE_CHAR, "+ is only defined for int and char.", token);
   assertWithToken(a_type != TYPE_CHAR || b_type != TYPE_CHAR, "char char + not supported", token);
   pushStack(stack, b + a);
@@ -413,11 +413,11 @@ void parseADD(PARSE_FUNC_TYPE) {
 }
 
 void parseSUB(PARSE_FUNC_TYPE) {
-  int a_type = popStack(stack);
-  int a = popStack(stack);
+  int a_type = popStack(stack, token);
+  int a = popStack(stack, token);
   assertWithToken(a_type == TYPE_INT || a_type == TYPE_CHAR, "- is only defined for int and char.", token);
-  int b_type = popStack(stack);
-  int b = popStack(stack);
+  int b_type = popStack(stack, token);
+  int b = popStack(stack, token);
   assertWithToken(b_type == TYPE_INT || b_type == TYPE_CHAR, "- is only defined for int and char.", token);
   pushStack(stack, b - a);
   if (a_type == TYPE_INT && b_type == TYPE_INT) {
@@ -430,60 +430,60 @@ void parseSUB(PARSE_FUNC_TYPE) {
 }
 
 void parseMUL(PARSE_FUNC_TYPE) {
-  int a_type = popStack(stack);
-  int a = popStack(stack);
-  int b_type = popStack(stack);
-  int b = popStack(stack);
+  int a_type = popStack(stack, token);
+  int a = popStack(stack, token);
+  int b_type = popStack(stack, token);
+  int b = popStack(stack, token);
   assertWithToken(a_type == TYPE_INT && b_type == TYPE_INT, "* is only defined for int", token);
   pushStack(stack, b * a);
   pushStack(stack, TYPE_INT);
 }
 
 void parseDIV(PARSE_FUNC_TYPE) {
-  int a_type = popStack(stack);
-  int a = popStack(stack);
-  int b_type = popStack(stack);
-  int b = popStack(stack);
+  int a_type = popStack(stack, token);
+  int a = popStack(stack, token);
+  int b_type = popStack(stack, token);
+  int b = popStack(stack, token);
   assertWithToken(a_type == TYPE_INT && b_type == TYPE_INT, "/ is only defined for int", token);
   pushStack(stack, b / a);
   pushStack(stack, TYPE_INT);
 }
 
 void parseREM(PARSE_FUNC_TYPE) {
-  int a_type = popStack(stack);
-  int a = popStack(stack);
-  int b_type = popStack(stack);
-  int b = popStack(stack);
+  int a_type = popStack(stack, token);
+  int a = popStack(stack, token);
+  int b_type = popStack(stack, token);
+  int b = popStack(stack, token);
   assertWithToken(a_type == TYPE_INT && b_type == TYPE_INT, "% is only defined for int", token);
   pushStack(stack, b % a);
   pushStack(stack, TYPE_INT);
 }
 
 int checkEquality(Stack *stack, Token *token) {
-  int a_type = popStack(stack);
+  int a_type = popStack(stack, token);
   if (a_type == TYPE_STR) {
-    int sizeA = popStack(stack);
+    int sizeA = popStack(stack, token);
     char wordA[sizeA + 1];
     int i;
     for (i = 0; i < sizeA + 1; i++) {
-      wordA[i] = popStack(stack);
+      wordA[i] = popStack(stack, token);
     }
-    int b_type = popStack(stack);
+    int b_type = popStack(stack, token);
     assertWithToken(b_type == TYPE_STR, "Can only compare strings with each other (=)", token);
-    int sizeB = popStack(stack);
+    int sizeB = popStack(stack, token);
     int result = sizeA == sizeB;
     char wordB[sizeB + 1];
     for (i = 0; i < sizeB + 1; i++) {
-      wordB[i] = popStack(stack);
+      wordB[i] = popStack(stack, token);
       if (result != 0 && wordA[i] != wordB[i]) {
         result = 0;
       }
     }
     return result;
   } else {
-    int a = popStack(stack);
-    int b_type = popStack(stack);
-    int b = popStack(stack);
+    int a = popStack(stack, token);
+    int b_type = popStack(stack, token);
+    int b = popStack(stack, token);
     assertWithToken((a_type == TYPE_INT || a_type == TYPE_CHAR) && (b_type == TYPE_INT || b_type == TYPE_CHAR), "Invalid types for =", token);
     return a == b;
   }
@@ -502,10 +502,10 @@ void parseNEQU(PARSE_FUNC_TYPE) {
 }
 
 int checkLessThan(Stack *stack, Token *token, int swap) {
-  int b_type = popStack(stack);
-  int b = popStack(stack);
-  int a_type = popStack(stack);
-  int a = popStack(stack);
+  int b_type = popStack(stack, token);
+  int b = popStack(stack, token);
+  int a_type = popStack(stack, token);
+  int a = popStack(stack, token);
   assertWithToken((a_type == TYPE_INT || a_type == TYPE_CHAR) && (b_type == TYPE_INT || b_type == TYPE_CHAR), "Invalid types for inequalities", token);
   if (swap == 0) {
     return a < b;
@@ -543,20 +543,20 @@ void parseLT(PARSE_FUNC_TYPE) {
 }
 
 void parsePOP(PARSE_FUNC_TYPE) {
-  int type = popStack(stack);
+  int type = popStack(stack, token);
   if (type == TYPE_INT) {
-    int value = popStack(stack);
+    int value = popStack(stack, token);
     printf("%d", value);
   } else if (type == TYPE_CHAR) {
-    int value = popStack(stack);
+    int value = popStack(stack, token);
     printf("%c", value);
   } else if (type == TYPE_STR) {
-    int size = popStack(stack);
+    int size = popStack(stack, token);
     int i;
     for (i = 0; i < size; i++) {
-      fputc(popStack(stack), stdout);
+      fputc(popStack(stack, token), stdout);
     }
-    int null = popStack(stack);
+    int null = popStack(stack, token);
     assertWithToken(null == '\0', "String must have a null character at the end", token);
   }
 }
@@ -591,27 +591,27 @@ void parseDUP(PARSE_FUNC_TYPE) {
 }
 
 void parseDROP(PARSE_FUNC_TYPE) {
-  popStack(stack);
+  popStack(stack, token);
 }
 
 void parseSWAP(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
-  int b = popStack(stack);
+  int a = popStack(stack, token);
+  int b = popStack(stack, token);
   pushStack(stack, a);
   pushStack(stack, b);
 }
 
 void parseOVER(PARSE_FUNC_TYPE) {
-  int a = popStack(stack);
+  int a = popStack(stack, token);
   int second = peekStack(stack, token);
   pushStack(stack, a);
   pushStack(stack, second);
 }
 
 void parseROT(PARSE_FUNC_TYPE) {
-  int c = popStack(stack);
-  int b = popStack(stack);
-  int a = popStack(stack);
+  int c = popStack(stack, token);
+  int b = popStack(stack, token);
+  int a = popStack(stack, token);
   pushStack(stack, b);
   pushStack(stack, c);
   pushStack(stack, a);
@@ -637,9 +637,9 @@ void parseIF(PARSE_FUNC_TYPE) {
     parseQueue(stack, instructions, definitions, queueElem);
   }
   assertWithToken(hasThen, "`then` not found after `if` or `elseif`", token);
-  int truth_type = popStack(stack);
+  int truth_type = popStack(stack, token);
   assertWithToken(truth_type == TYPE_INT, "`then` must pop an integer/boolean.", token);
-  int truth = popStack(stack);
+  int truth = popStack(stack, token);
   if (truth == 0) {
     /* Jump to next block (elseif or end) for evaluation. */
     int ends = 1, jumpType;
@@ -742,9 +742,9 @@ void parseWHILE(PARSE_FUNC_TYPE) {
     while (!isEmptyQueue(evalQueue)) {
       parseQueue(stack, evalQueue, definitions, pollQueue(evalQueue));
     }
-    int truth_type = popStack(stack);
+    int truth_type = popStack(stack, token);
     assertWithToken(truth_type == TYPE_INT, "`then` must pop an integer/boolean.", token);
-    int truth = popStack(stack);
+    int truth = popStack(stack, token);
     if (truth == 0) {
       break;
     }
